@@ -1,0 +1,175 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Fraunces:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --gold: #F5C842;
+  --gold-dark: #c49a10;
+  --red: #D63030;
+  --teal: #1D9E75;
+  --pink: #E8529A;
+  --navy: #0D1B3E;
+  --navy-light: #162550;
+  --cream: #FBF5E6;
+  --cream-dim: rgba(251,245,230,0.6);
+  --surface: rgba(255,255,255,0.05);
+  --surface-hover: rgba(255,255,255,0.09);
+  --border: rgba(255,255,255,0.1);
+  --border-gold: rgba(245,200,66,0.25);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow-card: 0 20px 60px rgba(0,0,0,0.35);
+  --shadow-btn: 0 8px 28px rgba(245,200,66,0.35);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body, #root { height: 100%; width: 100%; overflow: hidden; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--navy);
+  color: var(--cream);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* SCROLLABLE CONTAINER */
+.screen {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* TYPOGRAPHY */
+.font-display { font-family: 'Bebas Neue', sans-serif; }
+.font-serif { font-family: 'Fraunces', serif; }
+
+/* BUTTONS */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: none; cursor: pointer; font-family: inherit; font-weight: 600;
+  transition: all 0.18s ease; border-radius: 100px;
+  text-decoration: none; padding: 0;
+}
+.btn:active { transform: scale(0.96); }
+
+.btn-gold {
+  background: var(--gold); color: var(--navy);
+  padding: 14px 32px; font-size: 15px; font-weight: 700;
+  box-shadow: var(--shadow-btn);
+}
+.btn-gold:hover { background: #fad24e; box-shadow: 0 12px 36px rgba(245,200,66,0.5); transform: translateY(-2px); }
+
+.btn-ghost {
+  background: var(--surface); color: var(--cream);
+  border: 1px solid var(--border); padding: 13px 28px; font-size: 15px;
+}
+.btn-ghost:hover { background: var(--surface-hover); }
+
+.btn-red {
+  background: var(--red); color: white;
+  padding: 14px 32px; font-size: 15px; font-weight: 700;
+}
+.btn-red:hover { background: #e84040; transform: translateY(-2px); }
+
+.btn-icon {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--cream); font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+}
+.btn-icon:hover { background: var(--surface-hover); }
+
+/* CARDS */
+.glass-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+/* LOTERIA CARD */
+.loteria-card {
+  background: white; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 8px 6px 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  cursor: pointer; position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+}
+.loteria-card:hover { transform: scale(1.04); }
+.loteria-card.marked {
+  outline: 3px solid var(--red);
+  outline-offset: 0px;
+}
+.loteria-card.marked::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(214,48,48,0.25);
+  border-radius: 12px;
+  pointer-events: none;
+}
+.loteria-card-number {
+  position: absolute; top: 5px; left: 7px;
+  font-family: 'Bebas Neue', sans-serif; font-size: 14px;
+  color: rgba(0,0,0,0.4); line-height: 1;
+}
+.loteria-card-img {
+  width: 100%; aspect-ratio: 1;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+}
+.loteria-card-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 12px; color: #1a1a1a;
+  text-align: center; margin-top: 4px;
+  letter-spacing: 0.5px; line-height: 1;
+}
+
+/* PROGRESS BAR */
+.progress-bar {
+  height: 6px; background: rgba(255,255,255,0.1);
+  border-radius: 100px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 100px;
+  background: linear-gradient(90deg, var(--gold), #f09000);
+  transition: width 0.4s ease;
+}
+
+/* PESO BADGE */
+.peso-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(245,200,66,0.12); border: 1px solid var(--border-gold);
+  border-radius: 100px; padding: 6px 14px;
+  font-weight: 700; font-size: 14px; color: var(--gold);
+}
+
+/* MODAL OVERLAY */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 999;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.modal {
+  background: #162550; border: 1px solid var(--border-gold);
+  border-radius: 24px; padding: 40px 32px; max-width: 400px; width: 100%;
+  text-align: center; position: relative;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+
+/* ANIMATIONS */
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse-ring { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes bounce-in { 0% { transform: scale(0.3); opacity: 0; } 60% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+
+.anim-fade-in { animation: fadeIn 0.3s ease forwards; }
+.anim-slide-up { animation: slideUp 0.4s ease forwards; }
+.anim-bounce-in { animation: bounce-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }

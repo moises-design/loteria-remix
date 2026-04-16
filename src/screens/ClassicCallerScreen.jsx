@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle } from '../data/decks';
+import { speakCard, stopSpeech, unlockSpeech } from '../utils/voice';
 
 export default function ClassicCallerScreen() {
   const { setMode, activeDeck } = useGameStore();
@@ -35,6 +36,7 @@ export default function ClassicCallerScreen() {
       setCurrent(next);
       setCalled(c => [next, ...c]);
       setTimer(speed);
+      speakCard(next);
       return rest;
     });
   };
@@ -58,6 +60,7 @@ export default function ClassicCallerScreen() {
   }, [phase, autoPlay, speed, remaining]);
 
   const handleStart = () => {
+    unlockSpeech();
     setPhase('playing');
     callNext();
   };

@@ -9,6 +9,11 @@ import CustomPhotoDeckScreen from './screens/CustomPhotoDeckScreen';
 import MillennialModeScreen from './screens/MillennialModeScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
+import MiniGamesScreen from './screens/MiniGamesScreen';
+import MatchPairsScreen from './screens/MatchPairsScreen';
+import LightningRoundScreen from './screens/LightningRoundScreen';
+import NameItScreen from './screens/NameItScreen';
+import CardBlitzScreen from './screens/CardBlitzScreen';
 import './styles/global.css';
 
 const ONBOARDING_KEY = 'loteria-onboarded-v1';
@@ -17,15 +22,10 @@ export default function App() {
   const { mode } = useGameStore();
   const [onboarded, setOnboarded] = useState(() => !!localStorage.getItem(ONBOARDING_KEY));
 
-  const handleOnboardingDone = () => {
-    localStorage.setItem(ONBOARDING_KEY, '1');
-    setOnboarded(true);
-  };
-
   if (!onboarded) {
     return (
       <div style={{ width:'100%', height:'100%', overflow:'hidden' }}>
-        <OnboardingScreen onDone={handleOnboardingDone} />
+        <OnboardingScreen onDone={() => { localStorage.setItem(ONBOARDING_KEY,'1'); setOnboarded(true); }} />
       </div>
     );
   }
@@ -39,6 +39,11 @@ export default function App() {
     'custom-photo-deck': CustomPhotoDeckScreen,
     'millennial-mode': MillennialModeScreen,
     'settings': SettingsScreen,
+    'mini-games': MiniGamesScreen,
+    'match-pairs': MatchPairsScreen,
+    'lightning-round': LightningRoundScreen,
+    'name-it': NameItScreen,
+    'card-blitz': CardBlitzScreen,
   };
 
   const Screen = screens[mode] || HomeScreen;

@@ -3,6 +3,7 @@ import { useGameStore } from '../store/gameStore';
 import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle, createBoard, checkWin } from '../data/decks';
 import { LEVEL_CONFIGS } from './ClassicMenuScreen';
 import { LoteriaCard } from '../components/LoteriaCard';
+import { ShareScoreCard } from '../components/ShareScoreCard';
 import { hapticLight, hapticMedium, hapticSuccess, hapticError, soundMark, soundCombo, soundWin, soundError, soundCardFlip, soundTick } from '../utils/haptics';
 import Confetti from 'react-confetti';
 
@@ -28,6 +29,7 @@ export default function ClassicSingleScreen() {
   const [feedback, setFeedback] = useState(null);
   const [timer, setTimer] = useState(config.speed);
   const [pulsingBoard, setPulsingBoard] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const timerRef = useRef(null);
   const feedbackRef = useRef(null);
 
@@ -221,12 +223,24 @@ export default function ClassicSingleScreen() {
                 <span style={{ color:'var(--gold)', fontWeight:700 }}>+{config.reward + Math.floor(score/100)} 🪙</span>
               </div>
             </div>
-            <div style={{ display:'flex', gap:10 }}>
+            <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
               <button className="btn btn-gold" style={{ flex:1 }} onClick={() => { initGame(); setPhase('countdown'); setCountdown(3); }}>↺ Again</button>
               <button className="btn btn-ghost" style={{ flex:1 }} onClick={() => setMode('classic-menu')}>Levels</button>
+              <button className="btn btn-ghost" style={{ flex:'none', padding:'14px 16px' }} onClick={() => setShowShare(true)}>📤</button>
             </div>
           </div>
         </div>
+      )}
+
+      {showShare && (
+        <ShareScoreCard
+          score={score}
+          level={`Level ${selectedLevel} — ${config.name}`}
+          pesos={config.reward + Math.floor(score/100)}
+          cards={calledCards}
+          streak={combo}
+          onClose={() => setShowShare(false)}
+        />
       )}
 
       {phase === 'lost' && (

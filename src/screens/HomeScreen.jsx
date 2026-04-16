@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
+import { EmailCaptureBanner, EmailCaptureModal } from '../components/EmailCapture';
+import { AddToHomeScreenBanner } from '../components/AddToHomeScreen';
 
 const MODES = [
   {
@@ -37,10 +40,21 @@ const MODES = [
     accent: '#7986cb',
     tag: '😂 So Relatable',
   },
+  {
+    id: 'mini-games',
+    label: 'MINI GAMES',
+    sub: 'Match, Blitz, Quiz & More',
+    emoji: '🎯',
+    gradient: 'linear-gradient(135deg, #4527A0, #6A1B9A)',
+    accent: '#b39ddb',
+    tag: '⚡ Arcade',
+  },
 ];
 
 export default function HomeScreen() {
   const { setMode, pesos, streak } = useGameStore();
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const emailCaptured = localStorage.getItem('loteria-email-captured');
 
   return (
     <div className="screen" style={{ background: 'var(--navy)', minHeight: '100%' }}>
@@ -112,6 +126,11 @@ export default function HomeScreen() {
         <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: 3, textTransform: 'uppercase', color: 'rgba(245,200,66,0.6)', textAlign: 'center', marginBottom: 20 }}>
           CHOOSE YOUR MODE
         </div>
+
+        {/* Email + A2HS banners */}
+        {!emailCaptured && <EmailCaptureBanner onOpen={() => setShowEmailModal(true)} />}
+        <AddToHomeScreenBanner />
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           {MODES.map((m) => (
             <button
@@ -147,6 +166,8 @@ export default function HomeScreen() {
           🌮 Hecho con amor para la familia
         </div>
       </div>
+
+      {showEmailModal && <EmailCaptureModal onClose={() => setShowEmailModal(false)} />}
 
       <style>{`
         @keyframes float1 { 0%,100% { transform: rotate(-8deg) translateY(0); } 50% { transform: rotate(-8deg) translateY(-8px); } }

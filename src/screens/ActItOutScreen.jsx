@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle } from '../data/decks';
+import { getCardImageUrl } from '../data/cardArt';
 
 const TEAMS = ['Team Gallo', 'Team Luna', 'Team Sol', 'Team Rosa'];
 const ROUND_TIME = 60;
@@ -245,14 +246,18 @@ export default function ActItOutScreen() {
           {/* Card display */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{
-              background: currentCard.color,
-              borderRadius: 24, padding: '40px 32px', textAlign: 'center',
+              background: 'white',
+              borderRadius: 24, padding: '16px 16px 12px', textAlign: 'center',
               width: '100%', maxWidth: 300,
               boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
               animation: 'bounce-in 0.3s ease',
             }}>
-              <div style={{ fontSize: 80, marginBottom: 16 }}>{currentCard.emoji}</div>
-              <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 36, color: 'white', letterSpacing: 2, textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+              <img
+                src={getCardImageUrl(currentCard)}
+                alt={currentCard.name}
+                style={{ width: '100%', aspectRatio: '200/280', objectFit: 'contain', borderRadius: 8, marginBottom: 8, display: 'block' }}
+              />
+              <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 28, color: '#1a1a1a', letterSpacing: 2 }}>
                 {currentCard.name.toUpperCase()}
               </div>
             </div>

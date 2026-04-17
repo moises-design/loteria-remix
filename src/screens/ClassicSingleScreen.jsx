@@ -11,9 +11,10 @@ const soundEnabled = () => localStorage.getItem('sound') !== 'off';
 const hapticsEnabled = () => localStorage.getItem('haptics') !== 'off';
 
 export default function ClassicSingleScreen() {
-  const { setMode, pesos, addPesos, selectedLevel, completeLevel, activeDeck } = useGameStore();
+  const { setMode, pesos, addPesos, selectedLevel, completeLevel, activeDeck, photoAssignments } = useGameStore();
   const config = LEVEL_CONFIGS.find(l => l.level === selectedLevel) || LEVEL_CONFIGS[0];
   const deck = activeDeck === 'millennial' ? MILLENNIAL_DECK : CLASSIC_DECK;
+  const getPhotoUrl = (card) => activeDeck === 'photo' ? (photoAssignments[card.id] || null) : null;
 
   const [board, setBoard] = useState([]);
   const [marked, setMarked] = useState(new Set());
@@ -35,7 +36,7 @@ export default function ClassicSingleScreen() {
 
   const initGame = useCallback(() => {
     const newBoard = createBoard(deck);
-    const deckShuffled = shuffle(deck).filter(c => !newBoard.find(b => b.id === c.id));
+    const deckShuffled = shuffle([...deck]);
     setBoard(newBoard);
     setMarked(new Set());
     setRemaining(deckShuffled);
@@ -161,7 +162,7 @@ export default function ClassicSingleScreen() {
       <div style={{ padding:'8px 16px', flexShrink:0 }}>
         {currentCard ? (
           <div style={{ display:'flex', alignItems:'center', gap:12, background:pulsingBoard ? 'rgba(245,200,66,0.06)' : 'rgba(255,255,255,0.04)', border:`1px solid ${pulsingBoard ? 'rgba(245,200,66,0.35)' : 'rgba(255,255,255,0.08)'}`, borderRadius:14, padding:'10px 14px', transition:'all 0.3s' }}>
-            <LoteriaCard card={currentCard} size="sm" style={{ flexShrink:0 }} />
+            <LoteriaCard card={currentCard} size="sm" style={{ flexShrink:0 }} photoUrl={getPhotoUrl(currentCard)} />
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontFamily:'Bebas Neue, sans-serif', fontSize:20, color:'var(--gold)', letterSpacing:1, lineHeight:1, marginBottom:3 }}>{currentCard.name.toUpperCase()}</div>
               <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', fontStyle:'italic', lineHeight:1.35, overflow:'hidden', textOverflow:'ellipsis', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>"{currentCard.riddle}"</div>
@@ -176,7 +177,7 @@ export default function ClassicSingleScreen() {
       {calledCards.length > 1 && (
         <div style={{ padding:'0 16px 6px', flexShrink:0 }}>
           <div style={{ display:'flex', gap:5, overflowX:'auto' }}>
-            {calledCards.slice(1).map((c, i) => <LoteriaCard key={c.id} card={c} size="xs" style={{ opacity:0.7-i*0.08 }} />)}
+            {calledCards.slice(1).map((c, i) => <LoteriaCard key={c.id} card={c} size="xs" style={{ opacity:0.7-i*0.08 }} photoUrl={getPhotoUrl(c)} />)}
           </div>
         </div>
       )}
@@ -184,7 +185,7 @@ export default function ClassicSingleScreen() {
       <div style={{ flex:1, padding:'4px 10px 10px', display:'flex', alignItems:'center' }}>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:6, width:'100%' }}>
           {board.map((card, idx) => (
-            <LoteriaCard key={card.id} card={card} size="sm" marked={marked.has(idx)} winning={winLine?.includes(idx)} onClick={() => handleMarkCard(idx)} style={{ width:'100%' }} />
+            <LoteriaCard key={card.id} card={card} size="sm" marked={marked.has(idx)} winning={winLine?.includes(idx)} onClick={() => handleMarkCard(idx)} style={{ width:'100%' }} photoUrl={getPhotoUrl(card)} />
           ))}
         </div>
       </div>

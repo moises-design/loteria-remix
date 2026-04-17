@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { getCardImageUrl } from '../data/cardArt';
 import { useGameStore } from '../store/gameStore';
 import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle } from '../data/decks';
 import { speakCard } from '../utils/voice';
@@ -181,15 +182,11 @@ export default function NameItScreen() {
               maxWidth: 200, margin: '0 auto',
               boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
             }}>
-              <div style={{
-                width: 120, height: 120,
-                background: currentQ.correct.color + '22',
-                borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 64, marginBottom: 8,
-              }}>
-                {currentQ.correct.emoji}
-              </div>
-              <div style={{ height: 20, background: 'rgba(0,0,0,0.08)', borderRadius: 6, width: '80%' }} />
+              <img
+                src={getCardImageUrl(currentQ.correct)}
+                alt={currentQ.correct.name}
+                style={{ width: '100%', maxWidth: 160, aspectRatio: '200/280', objectFit: 'contain', borderRadius: 8, display: 'block', margin: '0 auto' }}
+              />
             </div>
           </div>
 
@@ -217,11 +214,7 @@ export default function NameItScreen() {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{
-                      width: 32, height: 32, borderRadius: 8,
-                      background: opt.color + '33', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 18,
-                    }}>{opt.emoji}</div>
+                    <img src={getCardImageUrl(opt)} alt={opt.name} style={{ width: 32, height: 44, objectFit: 'contain', borderRadius: 4, flexShrink: 0 }} />
                     <span style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 18, color: 'white', letterSpacing: 1 }}>
                       {opt.name.toUpperCase()}
                     </span>
@@ -262,7 +255,7 @@ export default function NameItScreen() {
                 borderRadius: 10, marginBottom: 6,
               }}>
                 <span style={{ fontSize: 16 }}>{a.correct ? '✅' : '❌'}</span>
-                <span style={{ fontSize: 18 }}>{a.card.emoji}</span>
+                <img src={getCardImageUrl(a.card)} alt={a.card.name} style={{ width: 20, height: 28, objectFit: 'contain', borderRadius: 2 }} />
                 <span style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 14, color: 'var(--cream)', flex: 1, textAlign: 'left' }}>
                   {a.card.name.toUpperCase()}
                 </span>

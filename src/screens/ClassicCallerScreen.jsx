@@ -4,7 +4,8 @@ import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle } from '../data/decks';
 import { speakCard, stopSpeech, unlockSpeech } from '../utils/voice';
 
 export default function ClassicCallerScreen() {
-  const { setMode, activeDeck } = useGameStore();
+  const { setMode, activeDeck, photoAssignments } = useGameStore();
+  const getPhotoUrl = (card) => activeDeck === 'photo' ? (photoAssignments?.[card?.id] || null) : null;
   const deck = activeDeck === 'millennial' ? MILLENNIAL_DECK : CLASSIC_DECK;
 
   const [remaining, setRemaining] = useState([]);
@@ -173,20 +174,19 @@ export default function ClassicCallerScreen() {
                   <div style={{ position: 'absolute', top: 10, left: 14, fontFamily: 'Bebas Neue, sans-serif', fontSize: 18, color: 'rgba(0,0,0,0.3)' }}>
                     {current.id}
                   </div>
-                  <div style={{ width: 140, height: 140, margin: '0 auto 12px', borderRadius: 12, overflow: 'hidden' }}>
-                    <img
-                      src={`/cards/card-${current.id}.png`}
-                      alt={current.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}
-                    />
-                    <div style={{
-                      display: 'none', width: '100%', height: '100%',
-                      background: current.color + '22', borderRadius: 12,
-                      alignItems: 'center', justifyContent: 'center', fontSize: 72,
-                    }}>
-                      {current.emoji}
-                    </div>
+                  <div style={{ width: 140, height: 196, margin: '0 auto 12px', borderRadius: 12, overflow: 'hidden' }}>
+                    {getPhotoUrl(current) ? (
+                      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                        <img src={getPhotoUrl(current)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+                        <div style={{ position: 'absolute', inset: 0, background: current.color + '40', mixBlendMode: 'multiply' }} />
+                      </div>
+                    ) : (
+                      <img
+                        src={`/cards/card-${current.id}.png`}
+                        alt={current.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                      />
+                    )}
                   </div>
                   <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 24, color: '#1a1a1a', letterSpacing: 1, textAlign: 'center' }}>
                     {current.name.toUpperCase()}
@@ -238,12 +238,18 @@ export default function ClassicCallerScreen() {
               <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
                 {called.slice(1, 10).map((c, i) => (
                   <div key={c.id} style={{
-                    width: 40, height: 52, background: 'rgba(255,255,255,0.08)',
-                    borderRadius: 8, display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                    opacity: 1 - i * 0.1, fontSize: 18,
+                    width: 40, height: 52, background: 'white',
+                    borderRadius: 8, flexShrink: 0, overflow: 'hidden',
+                    opacity: 1 - i * 0.1, padding: 2,
                   }}>
-                    {c.emoji}
+                    {getPhotoUrl(c) ? (
+                      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                        <img src={getPhotoUrl(c)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
+                        <div style={{ position: 'absolute', inset: 0, background: c.color + '40', mixBlendMode: 'multiply' }} />
+                      </div>
+                    ) : (
+                      <img src={`/cards/card-${c.id}.png`} alt={c.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    )}
                   </div>
                 ))}
               </div>

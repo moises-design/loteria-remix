@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { getCardImageUrl } from '../data/cardArt';
 import { useGameStore } from '../store/gameStore';
 import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle, createBoard } from '../data/decks';
 import { speakCard, speakText } from '../utils/voice';
@@ -222,12 +223,9 @@ export default function LightningRoundScreen() {
                 <div style={{
                   width: 56, height: 72, background: 'white', borderRadius: 8,
                   display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  justifyContent: 'center', flexShrink: 0, gap: 2,
+                  justifyContent: 'center', flexShrink: 0, overflow: 'hidden', padding: 2,
                 }}>
-                  <div style={{ fontSize: 28 }}>{currentCard.emoji}</div>
-                  <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 8, color: '#1a1a1a', textAlign: 'center', padding: '0 2px', lineHeight: 1 }}>
-                    {currentCard.name.toUpperCase()}
-                  </div>
+                  <img src={getCardImageUrl(currentCard)} alt={currentCard.name} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 4 }} />
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 22, color: 'var(--gold)', letterSpacing: 1 }}>
@@ -271,7 +269,7 @@ export default function LightningRoundScreen() {
                       animation: isTarget && timerPct < 30 ? 'pulse-ring 0.5s ease infinite' : 'none',
                     }}
                   >
-                    <div style={{ fontSize: 28, lineHeight: 1, marginBottom: 3 }}>{card.emoji}</div>
+                    <img src={getCardImageUrl(card)} alt={card.name} style={{ width: '100%', aspectRatio: '200/280', objectFit: 'contain', borderRadius: 4, marginBottom: 2 }} />
                     <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 9, color: '#1a1a1a', textAlign: 'center', letterSpacing: 0.3, lineHeight: 1 }}>
                       {card.name.toUpperCase()}
                     </div>

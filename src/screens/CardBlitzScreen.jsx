@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { getCardImageUrl } from '../data/cardArt';
 import { useGameStore } from '../store/gameStore';
 import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle } from '../data/decks';
 import { speakCard } from '../utils/voice';
@@ -207,7 +208,7 @@ export default function CardBlitzScreen() {
           <div style={{ padding: '8px 16px', flexShrink: 0, zIndex: 10, position: 'relative' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(245,200,66,0.12)', border: '1px solid rgba(245,200,66,0.3)', borderRadius: 12, padding: '8px 14px' }}>
               <div style={{ fontSize: 11, color: 'rgba(245,200,66,0.7)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, flexShrink: 0 }}>TAP →</div>
-              <div style={{ fontSize: 28 }}>{targetCard?.emoji}</div>
+              {targetCard && <img src={getCardImageUrl(targetCard)} alt={targetCard.name} style={{ width: 36, height: 50, objectFit: 'contain', borderRadius: 4 }} />}
               <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 20, color: 'var(--gold)', letterSpacing: 1 }}>
                 {targetCard?.name.toUpperCase()}
               </div>
@@ -264,7 +265,7 @@ export default function CardBlitzScreen() {
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     boxShadow: fc.isTarget ? '0 0 12px rgba(245,200,66,0.5)' : '0 4px 12px rgba(0,0,0,0.3)',
                   }}>
-                    <div style={{ fontSize: 30, lineHeight: 1 }}>{fc.card.emoji}</div>
+                    <img src={getCardImageUrl(fc.card)} alt={fc.card.name} style={{ width: '100%', aspectRatio: '200/280', objectFit: 'contain', borderRadius: 4, marginBottom: 2 }} />
                     <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 8, color: '#1a1a1a', textAlign: 'center', marginTop: 3, lineHeight: 1, letterSpacing: 0.3 }}>
                       {fc.card.name.split(' ').map(w => w.toUpperCase()).join('\n')}
                     </div>

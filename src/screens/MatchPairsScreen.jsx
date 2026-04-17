@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { getCardImageUrl } from '../data/cardArt';
 import { useGameStore } from '../store/gameStore';
 import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle } from '../data/decks';
 import { speakCard } from '../utils/voice';
@@ -236,7 +237,7 @@ export default function MatchPairsScreen() {
                     padding: '4px 3px',
                     boxShadow: isMatched ? '0 0 12px rgba(76,175,80,0.4)' : 'none',
                   }}>
-                    <div style={{ fontSize: 28, lineHeight: 1 }}>{card.emoji}</div>
+                    <img src={getCardImageUrl(card)} alt={card.name} style={{ width: '100%', aspectRatio: '200/280', objectFit: 'contain', borderRadius: 4 }} />
                     <div style={{
                       fontFamily: 'Bebas Neue, sans-serif', fontSize: 9,
                       color: '#1a1a1a', textAlign: 'center', marginTop: 3,

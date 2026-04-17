@@ -109,7 +109,7 @@ function PhotoCardPreview({ card, photoUrl, size = 150 }) {
 }
 
 export default function CustomPhotoDeckScreen() {
-  const { setMode, photoAssignments, setPhotoAssignments } = useGameStore();
+  const { setMode, photoAssignments, setPhotoAssignments, setActiveDeck } = useGameStore();
   const [photos, setPhotos] = useState([]); // [{url, name}]
   const [assignments, setAssignments] = useState(photoAssignments || {});
   const [phase, setPhase] = useState(Object.keys(photoAssignments).length > 0 ? 'preview' : 'upload');
@@ -290,7 +290,7 @@ export default function CustomPhotoDeckScreen() {
             <button className="btn btn-ghost" style={{ flex: 1, padding: '12px', fontSize: 13 }} onClick={randomAssign}>
               🔀 Re-mix
             </button>
-            <button className="btn btn-gold" style={{ flex: 1, padding: '12px', fontSize: 13 }} onClick={() => setMode('classic-menu')}>
+            <button className="btn btn-gold" style={{ flex: 1, padding: '12px', fontSize: 13 }} onClick={() => { setActiveDeck('photo'); setMode('classic-menu'); }}>
               ▶ Play!
             </button>
           </div>

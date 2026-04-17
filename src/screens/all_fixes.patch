@@ -1,0 +1,315 @@
+diff --git a/src/screens/ActItOutScreen.jsx b/src/screens/ActItOutScreen.jsx
+index 79623bd..d0e0cc0 100644
+--- a/src/screens/ActItOutScreen.jsx
++++ b/src/screens/ActItOutScreen.jsx
+@@ -1,6 +1,7 @@
+ import { useState, useEffect, useRef } from 'react';
+ import { useGameStore } from '../store/gameStore';
+ import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle } from '../data/decks';
++import { getCardImageUrl } from '../data/cardArt';
+ 
+ const TEAMS = ['Team Gallo', 'Team Luna', 'Team Sol', 'Team Rosa'];
+ const ROUND_TIME = 60;
+@@ -245,14 +246,18 @@ export default function ActItOutScreen() {
+           {/* Card display */}
+           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+             <div style={{
+-              background: currentCard.color,
+-              borderRadius: 24, padding: '40px 32px', textAlign: 'center',
++              background: 'white',
++              borderRadius: 24, padding: '16px 16px 12px', textAlign: 'center',
+               width: '100%', maxWidth: 300,
+               boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+               animation: 'bounce-in 0.3s ease',
+             }}>
+-              <div style={{ fontSize: 80, marginBottom: 16 }}>{currentCard.emoji}</div>
+-              <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 36, color: 'white', letterSpacing: 2, textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
++              <img
++                src={getCardImageUrl(currentCard)}
++                alt={currentCard.name}
++                style={{ width: '100%', aspectRatio: '200/280', objectFit: 'contain', borderRadius: 8, marginBottom: 8, display: 'block' }}
++              />
++              <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 28, color: '#1a1a1a', letterSpacing: 2 }}>
+                 {currentCard.name.toUpperCase()}
+               </div>
+             </div>
+diff --git a/src/screens/CardBlitzScreen.jsx b/src/screens/CardBlitzScreen.jsx
+index c05f653..29c15e1 100644
+--- a/src/screens/CardBlitzScreen.jsx
++++ b/src/screens/CardBlitzScreen.jsx
+@@ -1,4 +1,5 @@
+ import { useState, useEffect, useRef, useCallback } from 'react';
++import { getCardImageUrl } from '../data/cardArt';
+ import { useGameStore } from '../store/gameStore';
+ import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle } from '../data/decks';
+ import { speakCard } from '../utils/voice';
+@@ -207,7 +208,7 @@ export default function CardBlitzScreen() {
+           <div style={{ padding: '8px 16px', flexShrink: 0, zIndex: 10, position: 'relative' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(245,200,66,0.12)', border: '1px solid rgba(245,200,66,0.3)', borderRadius: 12, padding: '8px 14px' }}>
+               <div style={{ fontSize: 11, color: 'rgba(245,200,66,0.7)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, flexShrink: 0 }}>TAP →</div>
+-              <div style={{ fontSize: 28 }}>{targetCard?.emoji}</div>
++              {targetCard && <img src={getCardImageUrl(targetCard)} alt={targetCard.name} style={{ width: 36, height: 50, objectFit: 'contain', borderRadius: 4 }} />}
+               <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 20, color: 'var(--gold)', letterSpacing: 1 }}>
+                 {targetCard?.name.toUpperCase()}
+               </div>
+@@ -264,7 +265,7 @@ export default function CardBlitzScreen() {
+                     display: 'flex', flexDirection: 'column', alignItems: 'center',
+                     boxShadow: fc.isTarget ? '0 0 12px rgba(245,200,66,0.5)' : '0 4px 12px rgba(0,0,0,0.3)',
+                   }}>
+-                    <div style={{ fontSize: 30, lineHeight: 1 }}>{fc.card.emoji}</div>
++                    <img src={getCardImageUrl(fc.card)} alt={fc.card.name} style={{ width: '100%', aspectRatio: '200/280', objectFit: 'contain', borderRadius: 4, marginBottom: 2 }} />
+                     <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 8, color: '#1a1a1a', textAlign: 'center', marginTop: 3, lineHeight: 1, letterSpacing: 0.3 }}>
+                       {fc.card.name.split(' ').map(w => w.toUpperCase()).join('\n')}
+                     </div>
+diff --git a/src/screens/ClassicCallerScreen.jsx b/src/screens/ClassicCallerScreen.jsx
+index 5c319b5..2b5e6c8 100644
+--- a/src/screens/ClassicCallerScreen.jsx
++++ b/src/screens/ClassicCallerScreen.jsx
+@@ -4,7 +4,8 @@ import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle } from '../data/decks';
+ import { speakCard, stopSpeech, unlockSpeech } from '../utils/voice';
+ 
+ export default function ClassicCallerScreen() {
+-  const { setMode, activeDeck } = useGameStore();
++  const { setMode, activeDeck, photoAssignments } = useGameStore();
++  const getPhotoUrl = (card) => activeDeck === 'photo' ? (photoAssignments?.[card?.id] || null) : null;
+   const deck = activeDeck === 'millennial' ? MILLENNIAL_DECK : CLASSIC_DECK;
+ 
+   const [remaining, setRemaining] = useState([]);
+@@ -173,20 +174,19 @@ export default function ClassicCallerScreen() {
+                   <div style={{ position: 'absolute', top: 10, left: 14, fontFamily: 'Bebas Neue, sans-serif', fontSize: 18, color: 'rgba(0,0,0,0.3)' }}>
+                     {current.id}
+                   </div>
+-                  <div style={{ width: 140, height: 140, margin: '0 auto 12px', borderRadius: 12, overflow: 'hidden' }}>
+-                    <img
+-                      src={`/cards/card-${current.id}.png`}
+-                      alt={current.name}
+-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+-                      onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}
+-                    />
+-                    <div style={{
+-                      display: 'none', width: '100%', height: '100%',
+-                      background: current.color + '22', borderRadius: 12,
+-                      alignItems: 'center', justifyContent: 'center', fontSize: 72,
+-                    }}>
+-                      {current.emoji}
+-                    </div>
++                  <div style={{ width: 140, height: 196, margin: '0 auto 12px', borderRadius: 12, overflow: 'hidden' }}>
++                    {getPhotoUrl(current) ? (
++                      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
++                        <img src={getPhotoUrl(current)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
++                        <div style={{ position: 'absolute', inset: 0, background: current.color + '40', mixBlendMode: 'multiply' }} />
++                      </div>
++                    ) : (
++                      <img
++                        src={`/cards/card-${current.id}.png`}
++                        alt={current.name}
++                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
++                      />
++                    )}
+                   </div>
+                   <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 24, color: '#1a1a1a', letterSpacing: 1, textAlign: 'center' }}>
+                     {current.name.toUpperCase()}
+@@ -238,12 +238,18 @@ export default function ClassicCallerScreen() {
+               <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
+                 {called.slice(1, 10).map((c, i) => (
+                   <div key={c.id} style={{
+-                    width: 40, height: 52, background: 'rgba(255,255,255,0.08)',
+-                    borderRadius: 8, display: 'flex', flexDirection: 'column',
+-                    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+-                    opacity: 1 - i * 0.1, fontSize: 18,
++                    width: 40, height: 52, background: 'white',
++                    borderRadius: 8, flexShrink: 0, overflow: 'hidden',
++                    opacity: 1 - i * 0.1, padding: 2,
+                   }}>
+-                    {c.emoji}
++                    {getPhotoUrl(c) ? (
++                      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
++                        <img src={getPhotoUrl(c)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
++                        <div style={{ position: 'absolute', inset: 0, background: c.color + '40', mixBlendMode: 'multiply' }} />
++                      </div>
++                    ) : (
++                      <img src={`/cards/card-${c.id}.png`} alt={c.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
++                    )}
+                   </div>
+                 ))}
+               </div>
+diff --git a/src/screens/ClassicSingleScreen.jsx b/src/screens/ClassicSingleScreen.jsx
+index e98fedc..517bbc7 100644
+--- a/src/screens/ClassicSingleScreen.jsx
++++ b/src/screens/ClassicSingleScreen.jsx
+@@ -11,9 +11,10 @@ const soundEnabled = () => localStorage.getItem('sound') !== 'off';
+ const hapticsEnabled = () => localStorage.getItem('haptics') !== 'off';
+ 
+ export default function ClassicSingleScreen() {
+-  const { setMode, pesos, addPesos, selectedLevel, completeLevel, activeDeck } = useGameStore();
++  const { setMode, pesos, addPesos, selectedLevel, completeLevel, activeDeck, photoAssignments } = useGameStore();
+   const config = LEVEL_CONFIGS.find(l => l.level === selectedLevel) || LEVEL_CONFIGS[0];
+   const deck = activeDeck === 'millennial' ? MILLENNIAL_DECK : CLASSIC_DECK;
++  const getPhotoUrl = (card) => activeDeck === 'photo' ? (photoAssignments[card.id] || null) : null;
+ 
+   const [board, setBoard] = useState([]);
+   const [marked, setMarked] = useState(new Set());
+@@ -35,7 +36,7 @@ export default function ClassicSingleScreen() {
+ 
+   const initGame = useCallback(() => {
+     const newBoard = createBoard(deck);
+-    const deckShuffled = shuffle(deck).filter(c => !newBoard.find(b => b.id === c.id));
++    const deckShuffled = shuffle([...deck]);
+     setBoard(newBoard);
+     setMarked(new Set());
+     setRemaining(deckShuffled);
+@@ -161,7 +162,7 @@ export default function ClassicSingleScreen() {
+       <div style={{ padding:'8px 16px', flexShrink:0 }}>
+         {currentCard ? (
+           <div style={{ display:'flex', alignItems:'center', gap:12, background:pulsingBoard ? 'rgba(245,200,66,0.06)' : 'rgba(255,255,255,0.04)', border:`1px solid ${pulsingBoard ? 'rgba(245,200,66,0.35)' : 'rgba(255,255,255,0.08)'}`, borderRadius:14, padding:'10px 14px', transition:'all 0.3s' }}>
+-            <LoteriaCard card={currentCard} size="sm" style={{ flexShrink:0 }} />
++            <LoteriaCard card={currentCard} size="sm" style={{ flexShrink:0 }} photoUrl={getPhotoUrl(currentCard)} />
+             <div style={{ flex:1, minWidth:0 }}>
+               <div style={{ fontFamily:'Bebas Neue, sans-serif', fontSize:20, color:'var(--gold)', letterSpacing:1, lineHeight:1, marginBottom:3 }}>{currentCard.name.toUpperCase()}</div>
+               <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', fontStyle:'italic', lineHeight:1.35, overflow:'hidden', textOverflow:'ellipsis', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>"{currentCard.riddle}"</div>
+@@ -176,7 +177,7 @@ export default function ClassicSingleScreen() {
+       {calledCards.length > 1 && (
+         <div style={{ padding:'0 16px 6px', flexShrink:0 }}>
+           <div style={{ display:'flex', gap:5, overflowX:'auto' }}>
+-            {calledCards.slice(1).map((c, i) => <LoteriaCard key={c.id} card={c} size="xs" style={{ opacity:0.7-i*0.08 }} />)}
++            {calledCards.slice(1).map((c, i) => <LoteriaCard key={c.id} card={c} size="xs" style={{ opacity:0.7-i*0.08 }} photoUrl={getPhotoUrl(c)} />)}
+           </div>
+         </div>
+       )}
+@@ -184,7 +185,7 @@ export default function ClassicSingleScreen() {
+       <div style={{ flex:1, padding:'4px 10px 10px', display:'flex', alignItems:'center' }}>
+         <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:6, width:'100%' }}>
+           {board.map((card, idx) => (
+-            <LoteriaCard key={card.id} card={card} size="sm" marked={marked.has(idx)} winning={winLine?.includes(idx)} onClick={() => handleMarkCard(idx)} style={{ width:'100%' }} />
++            <LoteriaCard key={card.id} card={card} size="sm" marked={marked.has(idx)} winning={winLine?.includes(idx)} onClick={() => handleMarkCard(idx)} style={{ width:'100%' }} photoUrl={getPhotoUrl(card)} />
+           ))}
+         </div>
+       </div>
+diff --git a/src/screens/CustomPhotoDeckScreen.jsx b/src/screens/CustomPhotoDeckScreen.jsx
+index 8af5ec7..9ea39ce 100644
+--- a/src/screens/CustomPhotoDeckScreen.jsx
++++ b/src/screens/CustomPhotoDeckScreen.jsx
+@@ -109,7 +109,7 @@ function PhotoCardPreview({ card, photoUrl, size = 150 }) {
+ }
+ 
+ export default function CustomPhotoDeckScreen() {
+-  const { setMode, photoAssignments, setPhotoAssignments } = useGameStore();
++  const { setMode, photoAssignments, setPhotoAssignments, setActiveDeck } = useGameStore();
+   const [photos, setPhotos] = useState([]); // [{url, name}]
+   const [assignments, setAssignments] = useState(photoAssignments || {});
+   const [phase, setPhase] = useState(Object.keys(photoAssignments).length > 0 ? 'preview' : 'upload');
+@@ -290,7 +290,7 @@ export default function CustomPhotoDeckScreen() {
+             <button className="btn btn-ghost" style={{ flex: 1, padding: '12px', fontSize: 13 }} onClick={randomAssign}>
+               🔀 Re-mix
+             </button>
+-            <button className="btn btn-gold" style={{ flex: 1, padding: '12px', fontSize: 13 }} onClick={() => setMode('classic-menu')}>
++            <button className="btn btn-gold" style={{ flex: 1, padding: '12px', fontSize: 13 }} onClick={() => { setActiveDeck('photo'); setMode('classic-menu'); }}>
+               ▶ Play!
+             </button>
+           </div>
+diff --git a/src/screens/LightningRoundScreen.jsx b/src/screens/LightningRoundScreen.jsx
+index d8659ec..10469fe 100644
+--- a/src/screens/LightningRoundScreen.jsx
++++ b/src/screens/LightningRoundScreen.jsx
+@@ -1,4 +1,5 @@
+ import { useState, useEffect, useRef, useCallback } from 'react';
++import { getCardImageUrl } from '../data/cardArt';
+ import { useGameStore } from '../store/gameStore';
+ import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle, createBoard } from '../data/decks';
+ import { speakCard, speakText } from '../utils/voice';
+@@ -222,12 +223,9 @@ export default function LightningRoundScreen() {
+                 <div style={{
+                   width: 56, height: 72, background: 'white', borderRadius: 8,
+                   display: 'flex', flexDirection: 'column', alignItems: 'center',
+-                  justifyContent: 'center', flexShrink: 0, gap: 2,
++                  justifyContent: 'center', flexShrink: 0, overflow: 'hidden', padding: 2,
+                 }}>
+-                  <div style={{ fontSize: 28 }}>{currentCard.emoji}</div>
+-                  <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 8, color: '#1a1a1a', textAlign: 'center', padding: '0 2px', lineHeight: 1 }}>
+-                    {currentCard.name.toUpperCase()}
+-                  </div>
++                  <img src={getCardImageUrl(currentCard)} alt={currentCard.name} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 4 }} />
+                 </div>
+                 <div style={{ flex: 1 }}>
+                   <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 22, color: 'var(--gold)', letterSpacing: 1 }}>
+@@ -271,7 +269,7 @@ export default function LightningRoundScreen() {
+                       animation: isTarget && timerPct < 30 ? 'pulse-ring 0.5s ease infinite' : 'none',
+                     }}
+                   >
+-                    <div style={{ fontSize: 28, lineHeight: 1, marginBottom: 3 }}>{card.emoji}</div>
++                    <img src={getCardImageUrl(card)} alt={card.name} style={{ width: '100%', aspectRatio: '200/280', objectFit: 'contain', borderRadius: 4, marginBottom: 2 }} />
+                     <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 9, color: '#1a1a1a', textAlign: 'center', letterSpacing: 0.3, lineHeight: 1 }}>
+                       {card.name.toUpperCase()}
+                     </div>
+diff --git a/src/screens/MatchPairsScreen.jsx b/src/screens/MatchPairsScreen.jsx
+index 683f69b..8294262 100644
+--- a/src/screens/MatchPairsScreen.jsx
++++ b/src/screens/MatchPairsScreen.jsx
+@@ -1,4 +1,5 @@
+ import { useState, useEffect, useRef } from 'react';
++import { getCardImageUrl } from '../data/cardArt';
+ import { useGameStore } from '../store/gameStore';
+ import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle } from '../data/decks';
+ import { speakCard } from '../utils/voice';
+@@ -236,7 +237,7 @@ export default function MatchPairsScreen() {
+                     padding: '4px 3px',
+                     boxShadow: isMatched ? '0 0 12px rgba(76,175,80,0.4)' : 'none',
+                   }}>
+-                    <div style={{ fontSize: 28, lineHeight: 1 }}>{card.emoji}</div>
++                    <img src={getCardImageUrl(card)} alt={card.name} style={{ width: '100%', aspectRatio: '200/280', objectFit: 'contain', borderRadius: 4 }} />
+                     <div style={{
+                       fontFamily: 'Bebas Neue, sans-serif', fontSize: 9,
+                       color: '#1a1a1a', textAlign: 'center', marginTop: 3,
+diff --git a/src/screens/NameItScreen.jsx b/src/screens/NameItScreen.jsx
+index 04e6942..b10cc51 100644
+--- a/src/screens/NameItScreen.jsx
++++ b/src/screens/NameItScreen.jsx
+@@ -1,4 +1,5 @@
+ import { useState, useEffect, useRef } from 'react';
++import { getCardImageUrl } from '../data/cardArt';
+ import { useGameStore } from '../store/gameStore';
+ import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle } from '../data/decks';
+ import { speakCard } from '../utils/voice';
+@@ -181,15 +182,11 @@ export default function NameItScreen() {
+               maxWidth: 200, margin: '0 auto',
+               boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+             }}>
+-              <div style={{
+-                width: 120, height: 120,
+-                background: currentQ.correct.color + '22',
+-                borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
+-                fontSize: 64, marginBottom: 8,
+-              }}>
+-                {currentQ.correct.emoji}
+-              </div>
+-              <div style={{ height: 20, background: 'rgba(0,0,0,0.08)', borderRadius: 6, width: '80%' }} />
++              <img
++                src={getCardImageUrl(currentQ.correct)}
++                alt={currentQ.correct.name}
++                style={{ width: '100%', maxWidth: 160, aspectRatio: '200/280', objectFit: 'contain', borderRadius: 8, display: 'block', margin: '0 auto' }}
++              />
+             </div>
+           </div>
+ 
+@@ -217,11 +214,7 @@ export default function NameItScreen() {
+                   }}
+                 >
+                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+-                    <div style={{
+-                      width: 32, height: 32, borderRadius: 8,
+-                      background: opt.color + '33', display: 'flex', alignItems: 'center', justifyContent: 'center',
+-                      fontSize: 18,
+-                    }}>{opt.emoji}</div>
++                    <img src={getCardImageUrl(opt)} alt={opt.name} style={{ width: 32, height: 44, objectFit: 'contain', borderRadius: 4, flexShrink: 0 }} />
+                     <span style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 18, color: 'white', letterSpacing: 1 }}>
+                       {opt.name.toUpperCase()}
+                     </span>
+@@ -262,7 +255,7 @@ export default function NameItScreen() {
+                 borderRadius: 10, marginBottom: 6,
+               }}>
+                 <span style={{ fontSize: 16 }}>{a.correct ? '✅' : '❌'}</span>
+-                <span style={{ fontSize: 18 }}>{a.card.emoji}</span>
++                <img src={getCardImageUrl(a.card)} alt={a.card.name} style={{ width: 20, height: 28, objectFit: 'contain', borderRadius: 2 }} />
+                 <span style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 14, color: 'var(--cream)', flex: 1, textAlign: 'left' }}>
+                   {a.card.name.toUpperCase()}
+                 </span>

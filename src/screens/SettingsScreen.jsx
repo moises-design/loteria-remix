@@ -5,6 +5,12 @@ export default function SettingsScreen() {
   const { setMode, activeDeck, setActiveDeck, pesos } = useGameStore();
   const [soundOn, setSoundOn] = useState(localStorage.getItem('sound') !== 'off');
   const [hapticsOn, setHapticsOn] = useState(localStorage.getItem('haptics') !== 'off');
+  const [voiceLang, setVoiceLang] = useState(localStorage.getItem('voice-lang') || 'es');
+
+  const setVoice = (lang) => {
+    setVoiceLang(lang);
+    localStorage.setItem('voice-lang', lang);
+  };
 
   const toggleSound = () => {
     const next = !soundOn;
@@ -120,6 +126,43 @@ export default function SettingsScreen() {
                 </button>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Voice Language */}
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 3, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', marginBottom: 12 }}>CALLER VOICE</div>
+          <div className="glass-card">
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 12 }}>
+              🎙️ The caller announces cards in:
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              {[
+                { id: 'es', label: '🇲🇽 Español', sub: 'Con acento mexicano' },
+                { id: 'en', label: '🇺🇸 English', sub: 'English card names' },
+              ].map(opt => (
+                <button
+                  key={opt.id}
+                  className="btn"
+                  onClick={() => setVoice(opt.id)}
+                  style={{
+                    flex: 1, flexDirection: 'column', padding: '14px 10px', gap: 4,
+                    background: voiceLang === opt.id ? 'rgba(245,200,66,0.15)' : 'rgba(255,255,255,0.04)',
+                    border: `1.5px solid ${voiceLang === opt.id ? 'rgba(245,200,66,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                    borderRadius: 12,
+                  }}
+                >
+                  <span style={{ fontSize: 20 }}>{opt.label.split(' ')[0]}</span>
+                  <span style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 14, color: voiceLang === opt.id ? 'var(--gold)' : 'var(--cream)', letterSpacing: 1 }}>
+                    {opt.label.split(' ').slice(1).join(' ')}
+                  </span>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>{opt.sub}</span>
+                  {voiceLang === opt.id && (
+                    <span style={{ fontSize: 12, color: 'var(--gold)' }}>✓ Active</span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

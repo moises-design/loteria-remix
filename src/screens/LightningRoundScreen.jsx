@@ -29,7 +29,7 @@ export default function LightningRoundScreen() {
 
   const initGame = useCallback(() => {
     const newBoard = createBoard(deck);
-    const rest = shuffle(deck).filter(c => !newBoard.find(b => b.id === c.id));
+    const rest = shuffle([...deck]); // include ALL cards so board cards can be called
     setBoard(newBoard);
     setRemaining(rest);
     setLives(3);

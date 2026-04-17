@@ -1,14 +1,14 @@
 import { useGameStore } from '../store/gameStore';
 
 const LEVEL_CONFIGS = [
-  { level: 1, name: 'La Familia',    stars: 1, speed: 8, description: 'Nice and easy', reward: 20 },
-  { level: 2, name: 'El Barrio',     stars: 1, speed: 6, description: 'Getting warmer', reward: 30 },
-  { level: 3, name: 'La Fiesta',     stars: 2, speed: 5, description: 'Cards come faster', reward: 40 },
-  { level: 4, name: 'El Mercado',    stars: 2, speed: 4, description: 'Keep up!', reward: 50 },
-  { level: 5, name: 'La Plaza',      stars: 2, speed: 3, description: 'Speed challenge', reward: 65 },
-  { level: 6, name: 'El Gallo Loco', stars: 3, speed: 2.5, description: 'Expert mode', reward: 80 },
-  { level: 7, name: 'La Calavera',   stars: 3, speed: 2, description: 'No mercy', reward: 100 },
-  { level: 8, name: 'Don Clemente',  stars: 3, speed: 1.5, description: 'Legend difficulty', reward: 150 },
+  { level: 1, name: 'La Familia',    stars: 1, speed: 8,   description: '24 cards · Easy pace',     reward: 20  },
+  { level: 2, name: 'El Barrio',     stars: 1, speed: 6,   description: '28 cards · Getting warmer', reward: 30  },
+  { level: 3, name: 'La Fiesta',     stars: 2, speed: 5,   description: '30 cards · Cards fly fast', reward: 40  },
+  { level: 4, name: 'El Mercado',    stars: 2, speed: 4,   description: '32 cards · Keep up!',       reward: 50  },
+  { level: 5, name: 'La Plaza',      stars: 2, speed: 3,   description: '36 cards · Speed run',      reward: 65  },
+  { level: 6, name: 'El Gallo Loco', stars: 3, speed: 2.5, description: '38 cards · Expert mode',    reward: 80  },
+  { level: 7, name: 'La Calavera',   stars: 3, speed: 2,   description: '40 cards · No mercy',       reward: 100 },
+  { level: 8, name: 'Don Clemente',  stars: 3, speed: 1.5, description: '54 cards · Full deck legend', reward: 150 },
 ];
 
 export default function ClassicMenuScreen() {

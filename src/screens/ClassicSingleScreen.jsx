@@ -10,6 +10,18 @@ import Confetti from 'react-confetti';
 const soundEnabled = () => localStorage.getItem('sound') !== 'off';
 const hapticsEnabled = () => localStorage.getItem('haptics') !== 'off';
 
+// How many cards to deal into the call pool — fewer = faster wins
+const POOL_SIZES = {
+  1: 24, // Easy: win in ~12-20 calls on average
+  2: 28,
+  3: 30,
+  4: 32,
+  5: 36,
+  6: 38,
+  7: 40,
+  8: 54, // Legend: full deck
+};
+
 export default function ClassicSingleScreen() {
   const { setMode, pesos, addPesos, selectedLevel, completeLevel, activeDeck, photoAssignments } = useGameStore();
   const config = LEVEL_CONFIGS.find(l => l.level === selectedLevel) || LEVEL_CONFIGS[0];
@@ -36,10 +48,17 @@ export default function ClassicSingleScreen() {
 
   const initGame = useCallback(() => {
     const newBoard = createBoard(deck);
-    const deckShuffled = shuffle([...deck]);
+    // Use a LIMITED pool — board cards guaranteed to be in it for a fun fast game
+    const poolSize = POOL_SIZES[selectedLevel] || 30;
+    const boardIds = newBoard.map(c => c.id);
+    // Always include all board cards, then fill rest randomly
+    const nonBoard = shuffle(deck.filter(c => !boardIds.includes(c.id)));
+    const extraCount = Math.max(0, poolSize - newBoard.length);
+    const pool = shuffle([...newBoard, ...nonBoard.slice(0, extraCount)]);
+    
     setBoard(newBoard);
     setMarked(new Set());
-    setRemaining(deckShuffled);
+    setRemaining(pool);
     setCalledCards([]);
     setCurrentCard(null);
     setScore(0);
@@ -48,7 +67,7 @@ export default function ClassicSingleScreen() {
     setShowConfetti(false);
     setTimer(config.speed);
     setPulsingBoard(false);
-  }, [deck, config.speed]);
+  }, [deck, config.speed, selectedLevel]);
 
   useEffect(() => { initGame(); setPhase('countdown'); setCountdown(3); }, []);
 
@@ -137,6 +156,9 @@ export default function ClassicSingleScreen() {
 
   const timerPct = (timer / config.speed) * 100;
   const timerColor = timerPct < 20 ? '#ff4444' : timerPct < 40 ? 'var(--gold)' : 'var(--teal)';
+  const poolSize = POOL_SIZES[selectedLevel] || 30;
+  const cardsLeft = remaining.length;
+  const callsMade = poolSize - cardsLeft;
 
   return (
     <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'var(--navy)', overflow:'hidden' }}>
@@ -167,7 +189,11 @@ export default function ClassicSingleScreen() {
               <div style={{ fontFamily:'Bebas Neue, sans-serif', fontSize:20, color:'var(--gold)', letterSpacing:1, lineHeight:1, marginBottom:3 }}>{currentCard.name.toUpperCase()}</div>
               <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', fontStyle:'italic', lineHeight:1.35, overflow:'hidden', textOverflow:'ellipsis', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>"{currentCard.riddle}"</div>
             </div>
-            <div style={{ fontSize:11, color:'rgba(255,255,255,0.3)', flexShrink:0, textAlign:'right' }}>{remaining.length}<br/>left</div>
+            {/* Progress indicator */}
+            <div style={{ textAlign:'right', flexShrink:0 }}>
+              <div style={{ fontFamily:'Bebas Neue, sans-serif', fontSize:16, color:'rgba(255,255,255,0.5)', lineHeight:1 }}>{callsMade}</div>
+              <div style={{ fontSize:9, color:'rgba(255,255,255,0.3)', letterSpacing:1 }}>CALLED</div>
+            </div>
           </div>
         ) : (
           <div style={{ height:64, display:'flex', alignItems:'center', justifyContent:'center', color:'rgba(255,255,255,0.25)', fontSize:13 }}>Get ready...</div>
@@ -203,7 +229,9 @@ export default function ClassicSingleScreen() {
               {countdown > 0 ? countdown : '¡YA!'}
             </div>
             <div style={{ color:'rgba(255,255,255,0.6)', fontSize:16, marginTop:8 }}>Level {selectedLevel} — {config.name}</div>
-            <div style={{ color:'rgba(255,255,255,0.4)', fontSize:13, marginTop:4 }}>{config.speed}s per card</div>
+            <div style={{ color:'rgba(255,255,255,0.4)', fontSize:13, marginTop:4 }}>
+              {poolSize} cards · {config.speed}s each
+            </div>
           </div>
         </div>
       )}
@@ -218,6 +246,10 @@ export default function ClassicSingleScreen() {
               <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
                 <span style={{ color:'rgba(255,255,255,0.6)', fontSize:13 }}>Final Score</span>
                 <span style={{ fontFamily:'Bebas Neue, sans-serif', fontSize:20 }}>{score.toLocaleString()}</span>
+              </div>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
+                <span style={{ color:'rgba(255,255,255,0.6)', fontSize:13 }}>Cards Called</span>
+                <span style={{ fontFamily:'Bebas Neue, sans-serif', fontSize:20 }}>{callsMade} / {poolSize}</span>
               </div>
               <div style={{ display:'flex', justifyContent:'space-between' }}>
                 <span style={{ color:'rgba(255,255,255,0.6)', fontSize:13 }}>Pesos Earned</span>
@@ -249,7 +281,8 @@ export default function ClassicSingleScreen() {
           <div className="modal anim-bounce-in">
             <div style={{ fontSize:56, marginBottom:8 }}>😅</div>
             <div style={{ fontFamily:'Bebas Neue, sans-serif', fontSize:36, color:'var(--red)', letterSpacing:2 }}>DECK'S DONE!</div>
-            <div style={{ fontSize:14, color:'rgba(255,255,255,0.5)', margin:'8px 0 20px' }}>All cards were called. No Lotería this time!</div>
+            <div style={{ fontSize:14, color:'rgba(255,255,255,0.5)', margin:'8px 0 4px' }}>All {poolSize} cards were called.</div>
+            <div style={{ fontSize:13, color:'rgba(255,255,255,0.35)', marginBottom:20 }}>So close! Try again?</div>
             <div style={{ fontFamily:'Bebas Neue, sans-serif', fontSize:36, color:'var(--cream)', marginBottom:20 }}>{score.toLocaleString()} pts</div>
             <div style={{ display:'flex', gap:10 }}>
               <button className="btn btn-gold" style={{ flex:1 }} onClick={() => { initGame(); setPhase('countdown'); setCountdown(3); }}>Try Again</button>

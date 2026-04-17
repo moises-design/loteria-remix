@@ -173,13 +173,20 @@ export default function ClassicCallerScreen() {
                   <div style={{ position: 'absolute', top: 10, left: 14, fontFamily: 'Bebas Neue, sans-serif', fontSize: 18, color: 'rgba(0,0,0,0.3)' }}>
                     {current.id}
                   </div>
-                  <div style={{
-                    width: 140, height: 140, margin: '0 auto 12px',
-                    background: current.color + '22', borderRadius: 12,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 72,
-                  }}>
-                    {current.emoji}
+                  <div style={{ width: 140, height: 140, margin: '0 auto 12px', borderRadius: 12, overflow: 'hidden' }}>
+                    <img
+                      src={`/cards/card-${current.id}.png`}
+                      alt={current.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}
+                    />
+                    <div style={{
+                      display: 'none', width: '100%', height: '100%',
+                      background: current.color + '22', borderRadius: 12,
+                      alignItems: 'center', justifyContent: 'center', fontSize: 72,
+                    }}>
+                      {current.emoji}
+                    </div>
                   </div>
                   <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 24, color: '#1a1a1a', letterSpacing: 1, textAlign: 'center' }}>
                     {current.name.toUpperCase()}

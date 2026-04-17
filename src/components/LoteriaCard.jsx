@@ -1,21 +1,21 @@
 import { useState } from 'react';
-import { getCardSVG } from '../data/cardArt';
+import { getCardImageUrl } from '../data/cardArt';
 
 function CardImage({ card, size }) {
-  const svgContent = getCardSVG(card);
+  const [imgError, setImgError] = useState(false);
   const fontSize = size === 'xl' ? 80 : size === 'lg' ? 60 : size === 'md' ? 38 : size === 'sm' ? 26 : 18;
 
-  // If we have a real SVG, render it
-  if (svgContent && svgContent.includes('<svg')) {
+  if (!imgError) {
     return (
-      <div
-        style={{ width: '100%', aspectRatio: '1', borderRadius: 4, overflow: 'hidden' }}
-        dangerouslySetInnerHTML={{ __html: svgContent }}
+      <img
+        src={getCardImageUrl(card)}
+        alt={card.name}
+        onError={() => setImgError(true)}
+        style={{ width: '100%', aspectRatio: '200/280', borderRadius: 4, objectFit: 'cover', display: 'block' }}
       />
     );
   }
 
-  // Fallback to emoji
   return (
     <div style={{
       width: '100%', aspectRatio: '1', borderRadius: 4,
@@ -58,7 +58,6 @@ export function LoteriaCard({ card, size = 'md', marked = false, winning = false
         ...style,
       }}
     >
-      {/* Card number */}
       {size !== 'xs' && (
         <div style={{
           position: 'absolute', top: 3, left: 5,
@@ -67,7 +66,6 @@ export function LoteriaCard({ card, size = 'md', marked = false, winning = false
         }}>{card.id}</div>
       )}
 
-      {/* Image area */}
       <div style={{ width: '100%', position: 'relative' }}>
         {photoUrl ? (
           <div style={{ width: '100%', aspectRatio: '1', borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
@@ -78,7 +76,6 @@ export function LoteriaCard({ card, size = 'md', marked = false, winning = false
           <CardImage card={card} size={size} />
         )}
 
-        {/* Mark overlay */}
         {marked && (
           <div style={{
             position: 'absolute', inset: 0, borderRadius: 4,
@@ -96,7 +93,6 @@ export function LoteriaCard({ card, size = 'md', marked = false, winning = false
         )}
       </div>
 
-      {/* Card name */}
       {size !== 'xs' && s.nameSize > 0 && (
         <div style={{
           fontFamily: 'Bebas Neue, sans-serif',
@@ -114,8 +110,8 @@ export function LoteriaCard({ card, size = 'md', marked = false, winning = false
 }
 
 export function BigCallerCard({ card, isNew = false, photoUrl = null }) {
+  const [imgError, setImgError] = useState(false);
   if (!card) return null;
-  const svgContent = getCardSVG(card);
 
   return (
     <div style={{
@@ -141,8 +137,13 @@ export function BigCallerCard({ card, isNew = false, photoUrl = null }) {
             <img src={photoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
             <div style={{ position: 'absolute', inset: 0, background: card.color + '40', mixBlendMode: 'multiply' }} />
           </div>
-        ) : svgContent ? (
-          <div style={{ width: '100%', height: '100%' }} dangerouslySetInnerHTML={{ __html: svgContent }} />
+        ) : !imgError ? (
+          <img
+            src={getCardImageUrl(card)}
+            alt={card.name}
+            onError={() => setImgError(true)}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
         ) : (
           <div style={{ width: '100%', height: '100%', background: card.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 72 }}>
             {card.emoji}

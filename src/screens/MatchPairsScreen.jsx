@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { getCardImageUrl } from '../data/cardArt';
+import { CardDisplay } from '../components/CardDisplay';
 import { useGameStore } from '../store/gameStore';
 import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle } from '../data/decks';
 import { speakCard } from '../utils/voice';
@@ -26,6 +27,7 @@ export default function MatchPairsScreen() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [lastMatch, setLastMatch] = useState(null);
   const [wrongPair, setWrongPair] = useState([]);
+  const [previewing, setPreviewing] = useState(false);
   const timerRef = useRef(null);
   const lockRef = useRef(false);
 
@@ -43,8 +45,11 @@ export default function MatchPairsScreen() {
     setMatched(new Set());
     setMoves(0);
     setTimeLeft(diff === 'easy' ? 90 : diff === 'medium' ? 75 : 60);
-    setPhase('playing');
     setShowConfetti(false);
+    // Show all cards face-up for 3s so players can study them
+    setPreviewing(true);
+    setPhase('playing');
+    setTimeout(() => setPreviewing(false), 3000);
   };
 
   // Timer
@@ -191,9 +196,16 @@ export default function MatchPairsScreen() {
         </div>
       )}
 
+      {/* Preview banner */}
+      {phase === 'playing' && previewing && (
+        <div style={{ background: 'rgba(245,200,66,0.15)', border: '1px solid rgba(245,200,66,0.3)', borderRadius: 10, margin: '0 12px 4px', padding: '8px 12px', textAlign: 'center', flexShrink: 0 }}>
+          <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 16, color: 'var(--gold)', letterSpacing: 1 }}>👀 MEMORIZE! Cards flip in 3s...</div>
+        </div>
+      )}
+
       {/* Grid */}
       {phase === 'playing' && (
-        <div style={{ flex: 1, padding: '8px 12px 12px', display: 'flex', alignItems: 'center' }}>
+        <div style={{ flex: 1, padding: '4px 12px 12px', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <div style={{
             display: 'grid',
             gridTemplateColumns: `repeat(${cfg.cols}, 1fr)`,
@@ -211,7 +223,7 @@ export default function MatchPairsScreen() {
                     aspectRatio: '3/4', borderRadius: 10, cursor: 'pointer',
                     position: 'relative', transition: 'transform 0.3s ease',
                     transformStyle: 'preserve-3d',
-                    transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                    transform: (isFlipped || previewing) ? 'rotateY(180deg)' : 'rotateY(0deg)',
                   }}
                 >
                   {/* Back face */}
@@ -237,7 +249,7 @@ export default function MatchPairsScreen() {
                     padding: '4px 3px',
                     boxShadow: isMatched ? '0 0 12px rgba(76,175,80,0.4)' : 'none',
                   }}>
-                    <img src={getCardImageUrl(card)} alt={card.name} style={{ width: '100%', aspectRatio: '200/280', objectFit: 'contain', borderRadius: 4 }} />
+                    <CardDisplay card={card} />
                     <div style={{
                       fontFamily: 'Bebas Neue, sans-serif', fontSize: 9,
                       color: '#1a1a1a', textAlign: 'center', marginTop: 3,

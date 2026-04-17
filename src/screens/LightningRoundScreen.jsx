@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getCardImageUrl } from '../data/cardArt';
+import { CardDisplay } from '../components/CardDisplay';
 import { useGameStore } from '../store/gameStore';
 import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle, createBoard } from '../data/decks';
 import { speakCard, speakText } from '../utils/voice';
@@ -221,11 +222,10 @@ export default function LightningRoundScreen() {
                 borderRadius: 14, padding: '10px 14px', transition: 'all 0.3s',
               }}>
                 <div style={{
-                  width: 56, height: 72, background: 'white', borderRadius: 8,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  justifyContent: 'center', flexShrink: 0, overflow: 'hidden', padding: 2,
+                  width: 48, background: 'white', borderRadius: 8,
+                  flexShrink: 0, overflow: 'hidden', padding: 3,
                 }}>
-                  <img src={getCardImageUrl(currentCard)} alt={currentCard.name} style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 4 }} />
+                  <CardDisplay card={currentCard} />
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 22, color: 'var(--gold)', letterSpacing: 1 }}>
@@ -250,8 +250,8 @@ export default function LightningRoundScreen() {
           </div>
 
           {/* Board */}
-          <div style={{ flex: 1, padding: '0 10px 10px', display: 'flex', alignItems: 'center' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, width: '100%' }}>
+          <div style={{ flex: 1, padding: '0 10px 10px', overflowY: 'auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 5, width: '100%' }}>
               {board.map((card, idx) => {
                 const isTarget = currentCard && card.id === currentCard.id;
                 return (
@@ -260,17 +260,17 @@ export default function LightningRoundScreen() {
                     onClick={() => handleTap(idx)}
                     style={{
                       background: isTarget && timerPct < 30 ? '#fff5f5' : 'white',
-                      borderRadius: 10, padding: '6px 4px 4px',
+                      borderRadius: 8, padding: '4px 3px 3px',
                       border: isTarget ? `2.5px solid ${timerPct < 30 ? '#ff4444' : 'var(--gold)'}` : '1.5px solid #ddd',
                       display: 'flex', flexDirection: 'column', alignItems: 'center',
                       cursor: 'pointer', position: 'relative',
-                      boxShadow: isTarget ? `0 0 12px ${timerPct < 30 ? 'rgba(255,68,68,0.4)' : 'rgba(245,200,66,0.4)'}` : 'none',
+                      boxShadow: isTarget ? `0 0 10px ${timerPct < 30 ? 'rgba(255,68,68,0.4)' : 'rgba(245,200,66,0.4)'}` : 'none',
                       transition: 'all 0.15s',
                       animation: isTarget && timerPct < 30 ? 'pulse-ring 0.5s ease infinite' : 'none',
                     }}
                   >
-                    <img src={getCardImageUrl(card)} alt={card.name} style={{ width: '100%', aspectRatio: '200/280', objectFit: 'contain', borderRadius: 4, marginBottom: 2 }} />
-                    <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 9, color: '#1a1a1a', textAlign: 'center', letterSpacing: 0.3, lineHeight: 1 }}>
+                    <CardDisplay card={card} />
+                    <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 8, color: '#1a1a1a', textAlign: 'center', letterSpacing: 0.3, lineHeight: 1, marginTop: 2, width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {card.name.toUpperCase()}
                     </div>
                   </div>

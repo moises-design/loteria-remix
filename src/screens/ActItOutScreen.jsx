@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle } from '../data/decks';
 import { getCardImageUrl } from '../data/cardArt';
+import { CardDisplay } from '../components/CardDisplay';
 
 const TEAMS = ['Team Gallo', 'Team Luna', 'Team Sol', 'Team Rosa'];
 const ROUND_TIME = 60;
@@ -252,11 +253,7 @@ export default function ActItOutScreen() {
               boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
               animation: 'bounce-in 0.3s ease',
             }}>
-              <img
-                src={getCardImageUrl(currentCard)}
-                alt={currentCard.name}
-                style={{ width: '100%', aspectRatio: '200/280', objectFit: 'contain', borderRadius: 8, marginBottom: 8, display: 'block' }}
-              />
+              <CardDisplay card={currentCard} style={{ borderRadius: 8, marginBottom: 8 }} />
               <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 28, color: '#1a1a1a', letterSpacing: 2 }}>
                 {currentCard.name.toUpperCase()}
               </div>

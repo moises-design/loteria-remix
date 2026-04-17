@@ -1,32 +1,6 @@
 import { useState } from 'react';
-import { getCardImageUrl } from '../data/cardArt';
-
-function CardImage({ card, size }) {
-  const [imgError, setImgError] = useState(false);
-  const fontSize = size === 'xl' ? 80 : size === 'lg' ? 60 : size === 'md' ? 38 : size === 'sm' ? 26 : 18;
-
-  if (!imgError) {
-    return (
-      <img
-        src={getCardImageUrl(card)}
-        alt={card.name}
-        onError={() => setImgError(true)}
-        style={{ width: '100%', aspectRatio: '200/280', borderRadius: 4, objectFit: 'cover', display: 'block' }}
-      />
-    );
-  }
-
-  return (
-    <div style={{
-      width: '100%', aspectRatio: '1', borderRadius: 4,
-      background: card.color + '22',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize,
-    }}>
-      {card.emoji}
-    </div>
-  );
-}
+import { getCardImageUrl, hasCardImage } from '../data/cardArt';
+import { CardDisplay } from './CardDisplay';
 
 export function LoteriaCard({ card, size = 'md', marked = false, winning = false, onClick, dim = false, photoUrl = null, style = {} }) {
   const sizes = {
@@ -68,12 +42,12 @@ export function LoteriaCard({ card, size = 'md', marked = false, winning = false
 
       <div style={{ width: '100%', position: 'relative' }}>
         {photoUrl ? (
-          <div style={{ width: '100%', aspectRatio: '1', borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
+          <div style={{ width: '100%', aspectRatio: '200/280', borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
             <img src={photoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
             <div style={{ position: 'absolute', inset: 0, background: card.color + '40', mixBlendMode: 'multiply' }} />
           </div>
         ) : (
-          <CardImage card={card} size={size} />
+          <CardDisplay card={card} />
         )}
 
         {marked && (
@@ -110,7 +84,6 @@ export function LoteriaCard({ card, size = 'md', marked = false, winning = false
 }
 
 export function BigCallerCard({ card, isNew = false, photoUrl = null }) {
-  const [imgError, setImgError] = useState(false);
   if (!card) return null;
 
   return (
@@ -131,23 +104,14 @@ export function BigCallerCard({ card, isNew = false, photoUrl = null }) {
         <div style={{ height: 1, flex: 1, background: 'rgba(0,0,0,0.1)' }} />
       </div>
 
-      <div style={{ width: 160, height: 160, margin: '0 auto 10px', borderRadius: 10, overflow: 'hidden' }}>
+      <div style={{ width: '100%', maxWidth: 160, margin: '0 auto 10px', borderRadius: 10, overflow: 'hidden' }}>
         {photoUrl ? (
-          <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+          <div style={{ position: 'relative', width: '100%', aspectRatio: '200/280' }}>
             <img src={photoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }} />
             <div style={{ position: 'absolute', inset: 0, background: card.color + '40', mixBlendMode: 'multiply' }} />
           </div>
-        ) : !imgError ? (
-          <img
-            src={getCardImageUrl(card)}
-            alt={card.name}
-            onError={() => setImgError(true)}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
         ) : (
-          <div style={{ width: '100%', height: '100%', background: card.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 72 }}>
-            {card.emoji}
-          </div>
+          <CardDisplay card={card} />
         )}
       </div>
 

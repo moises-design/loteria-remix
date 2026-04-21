@@ -1,5 +1,5 @@
 // Web Speech API voice caller — Lotería Remix
-// Supports Spanish (es-MX) and English (en-US) caller modes
+// Female voice, fast & energetic, no riddles
 
 let voices = [];
 
@@ -18,8 +18,13 @@ export function getVoiceLang() {
 
 function getBestVoice(lang) {
   const isSpanish = lang === 'es';
+
   if (isSpanish) {
+    // Prefer female Spanish voices
     return (
+      voices.find(v => v.lang === 'es-MX' && v.localService && /female|mujer|paulina|mónica|monica|karen|siri/i.test(v.name)) ||
+      voices.find(v => v.lang === 'es-US' && v.localService && /female|mujer|paulina|mónica|monica|karen|siri/i.test(v.name)) ||
+      voices.find(v => v.lang.startsWith('es') && v.localService && /female|mujer|paulina|mónica|monica|karen|siri/i.test(v.name)) ||
       voices.find(v => v.lang === 'es-MX' && v.localService) ||
       voices.find(v => v.lang === 'es-US' && v.localService) ||
       voices.find(v => v.lang.startsWith('es') && v.localService) ||
@@ -27,7 +32,10 @@ function getBestVoice(lang) {
       voices[0] || null
     );
   } else {
+    // Prefer female English voices
     return (
+      voices.find(v => v.lang === 'en-US' && v.localService && /female|samantha|victoria|karen|siri|zira/i.test(v.name)) ||
+      voices.find(v => v.lang.startsWith('en') && v.localService && /female|samantha|victoria|karen|siri|zira/i.test(v.name)) ||
       voices.find(v => v.lang === 'en-US' && v.localService) ||
       voices.find(v => v.lang.startsWith('en') && v.localService) ||
       voices.find(v => v.lang.startsWith('en')) ||
@@ -36,16 +44,16 @@ function getBestVoice(lang) {
   }
 }
 
-function speak(text, { rate = 0.88, pitch = 1.1, volume = 1.0, delay = 0, lang } = {}) {
+function speak(text, { rate = 1.0, pitch = 1.2, volume = 1.0, delay = 0 } = {}) {
   if (!window.speechSynthesis) return;
   if (localStorage.getItem('sound') === 'off') return;
 
-  const voiceLang = lang || getVoiceLang();
-  const utterLang = voiceLang === 'es' ? 'es-MX' : 'en-US';
+  const lang = getVoiceLang();
+  const utterLang = lang === 'es' ? 'es-MX' : 'en-US';
 
   const doSpeak = () => {
     const utt = new SpeechSynthesisUtterance(text);
-    const voice = getBestVoice(voiceLang);
+    const voice = getBestVoice(lang);
     if (voice) utt.voice = voice;
     utt.lang = utterLang;
     utt.rate = rate;
@@ -58,7 +66,7 @@ function speak(text, { rate = 0.88, pitch = 1.1, volume = 1.0, delay = 0, lang }
   delay > 0 ? setTimeout(doSpeak, delay) : doSpeak();
 }
 
-// English translations for card names
+// English card name translations
 const EN_NAMES = {
   'El Gallo': 'The Rooster', 'El Diablito': 'The Little Devil', 'La Dama': 'The Lady',
   'El Catrín': 'The Dandy', 'El Paraguas': 'The Umbrella', 'La Sirena': 'The Mermaid',
@@ -82,37 +90,27 @@ const EN_NAMES = {
 
 function getCardText(card) {
   const lang = getVoiceLang();
-  if (lang === 'en') {
-    return EN_NAMES[card.name] || card.name;
-  }
+  if (lang === 'en') return EN_NAMES[card.name] || card.name;
   return card.name;
 }
 
+// Caller Mode — just the name, fast and energetic, no riddles
 export function speakCard(card) {
   if (!window.speechSynthesis) return;
   if (localStorage.getItem('sound') === 'off') return;
   window.speechSynthesis.cancel();
-
-  const lang = getVoiceLang();
-  const name = getCardText(card);
-  const hasRiddle = card.riddle && lang === 'es' && localStorage.getItem('voice-riddles') !== 'off';
-
-  if (hasRiddle && Math.random() < 0.5) {
-    speak(card.riddle, { rate: 0.82, pitch: 1.05 });
-    speak(name, { rate: 0.78, pitch: 1.15, delay: 1400 });
-  } else {
-    speak(name, { rate: 0.80, pitch: 1.1 });
-  }
+  speak(getCardText(card), { rate: 1.05, pitch: 1.25 });
 }
 
+// Single Player — same fast style
 export function speakCardQuick(card) {
   if (!window.speechSynthesis) return;
   if (localStorage.getItem('sound') === 'off') return;
   window.speechSynthesis.cancel();
-  speak(getCardText(card), { rate: 0.85, pitch: 1.1 });
+  speak(getCardText(card), { rate: 1.1, pitch: 1.25 });
 }
 
-export function speakText(text, lang = 'es-MX', rate = 0.9) {
+export function speakText(text, lang = 'es-MX', rate = 1.0) {
   if (!window.speechSynthesis) return;
   if (localStorage.getItem('sound') === 'off') return;
   window.speechSynthesis.cancel();
@@ -124,11 +122,11 @@ export function speakLoteria() {
   window.speechSynthesis.cancel();
   const lang = getVoiceLang();
   if (lang === 'es') {
-    speak('¡Lotería!', { rate: 0.7, pitch: 1.2 });
-    speak('¡Tenemos ganador!', { rate: 0.8, pitch: 1.1, delay: 900 });
+    speak('¡Lotería!', { rate: 0.85, pitch: 1.3 });
+    speak('¡Tenemos ganador!', { rate: 0.9, pitch: 1.25, delay: 800 });
   } else {
-    speak('Lotería!', { rate: 0.7, pitch: 1.2 });
-    speak('We have a winner!', { rate: 0.8, pitch: 1.1, delay: 900 });
+    speak('Lotería!', { rate: 0.85, pitch: 1.3 });
+    speak('We have a winner!', { rate: 0.9, pitch: 1.25, delay: 800 });
   }
 }
 
@@ -137,11 +135,11 @@ export function speakCorrerSeVa() {
   window.speechSynthesis.cancel();
   const lang = getVoiceLang();
   if (lang === 'es') {
-    speak('¡Corre y se va!', { rate: 0.75, pitch: 1.1 });
-    speak('¡Lotería!', { rate: 0.7, pitch: 1.2, delay: 1000 });
+    speak('¡Corre y se va!', { rate: 0.9, pitch: 1.25 });
+    speak('¡Lotería!', { rate: 0.85, pitch: 1.3, delay: 900 });
   } else {
-    speak('Here we go!', { rate: 0.75, pitch: 1.1 });
-    speak('Lotería!', { rate: 0.7, pitch: 1.2, delay: 900 });
+    speak('Here we go!', { rate: 0.9, pitch: 1.25 });
+    speak('Lotería!', { rate: 0.85, pitch: 1.3, delay: 800 });
   }
 }
 

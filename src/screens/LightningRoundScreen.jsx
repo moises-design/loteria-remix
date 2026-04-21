@@ -1,178 +1,205 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { getCardImageUrl } from '../data/cardArt';
 import { CardDisplay } from '../components/CardDisplay';
 import { useGameStore } from '../store/gameStore';
 import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle, createBoard } from '../data/decks';
-import { speakCard, speakText } from '../utils/voice';
-import { hapticLight, hapticHeavy, hapticSuccess, hapticError } from '../utils/haptics';
+import { speakCardQuick } from '../utils/voice';
+import { hapticLight, hapticSuccess, hapticError } from '../utils/haptics';
 import Confetti from 'react-confetti';
 
 export default function LightningRoundScreen() {
   const { setMode, addPesos, activeDeck } = useGameStore();
   const deck = activeDeck === 'millennial' ? MILLENNIAL_DECK : CLASSIC_DECK;
 
-  const [board, setBoard] = useState([]);
-  const [remaining, setRemaining] = useState([]);
-  const [currentCard, setCurrentCard] = useState(null);
+  const [phase, setPhase] = useState('setup');
+  const [countdown, setCountdown] = useState(3);
   const [lives, setLives] = useState(3);
   const [score, setScore] = useState(0);
-  const [phase, setPhase] = useState('setup'); // setup | countdown | playing | won | lost
-  const [countdown, setCountdown] = useState(3);
-  const [timeLeft, setTimeLeft] = useState(3);
-  const [cardTimeLimit, setCardTimeLimit] = useState(3);
   const [streak, setStreak] = useState(0);
+  const [cardsCompleted, setCardsCompleted] = useState(0);
   const [feedback, setFeedback] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [cardsCompleted, setCardsCompleted] = useState(0);
-  const cardTimerRef = useRef(null);
-  const feedbackRef = useRef(null);
+  const [timerPct, setTimerPct] = useState(100);
 
-  const initGame = useCallback(() => {
+  // Use refs for game state to avoid stale closures completely
+  const boardRef = useRef([]);
+  const currentCardRef = useRef(null);
+  const livesRef = useRef(3);
+  const scoreRef = useRef(0);
+  const streakRef = useRef(0);
+  const cardsCompletedRef = useRef(0);
+  const phaseRef = useRef('setup');
+  const cardTimerRef = useRef(null);
+  const feedbackTimerRef = useRef(null);
+  const speedRef = useRef(3);
+
+  // Display state synced from refs
+  const [boardDisplay, setBoardDisplay] = useState([]);
+  const [currentCardDisplay, setCurrentCardDisplay] = useState(null);
+  const [livesDisplay, setLivesDisplay] = useState(3);
+  const [scoreDisplay, setScoreDisplay] = useState(0);
+
+  const showFeedback = (msg, color) => {
+    clearTimeout(feedbackTimerRef.current);
+    setFeedback({ msg, color });
+    feedbackTimerRef.current = setTimeout(() => setFeedback(null), 800);
+  };
+
+  const endGame = useCallback((won) => {
+    clearInterval(cardTimerRef.current);
+    phaseRef.current = won ? 'won' : 'lost';
+    if (won) {
+      setShowConfetti(true);
+      addPesos(100 + scoreRef.current);
+      setPhase('won');
+    } else {
+      setPhase('lost');
+    }
+  }, [addPesos]);
+
+  const callNextCard = useCallback(() => {
+    clearInterval(cardTimerRef.current);
+    if (phaseRef.current !== 'playing') return;
+
+    const board = boardRef.current;
+    const boardIds = board.map(c => c.id);
+
+    // Build a fresh pool from the full deck each time, weighted toward board cards
+    const onBoard = deck.filter(c => boardIds.includes(c.id));
+    const offBoard = deck.filter(c => !boardIds.includes(c.id));
+
+    // 65% chance pick from board cards
+    const pool = (Math.random() < 0.65 && onBoard.length > 0) ? onBoard : deck;
+    const next = pool[Math.floor(Math.random() * pool.length)];
+
+    currentCardRef.current = next;
+    setCurrentCardDisplay(next);
+    setTimerPct(100);
+    speakCardQuick(next);
+
+    // Speed up over time
+    const speed = Math.max(1.5, 3 - Math.floor(scoreRef.current / 300) * 0.3);
+    speedRef.current = speed;
+
+    // Countdown timer
+    let elapsed = 0;
+    const interval = 50;
+    cardTimerRef.current = setInterval(() => {
+      elapsed += interval;
+      const pct = Math.max(0, 100 - (elapsed / (speed * 1000)) * 100);
+      setTimerPct(pct);
+
+      if (elapsed >= speed * 1000) {
+        clearInterval(cardTimerRef.current);
+        // Time's up — check if card was on board
+        const isOnBoard = boardRef.current.find(c => c.id === currentCardRef.current?.id);
+        if (isOnBoard) {
+          // Missed it — lose a life
+          hapticError();
+          livesRef.current -= 1;
+          setLivesDisplay(livesRef.current);
+          streakRef.current = 0;
+          if (livesRef.current <= 0) {
+            endGame(false);
+          } else {
+            showFeedback('MISSED! -❤️', '#ff4444');
+            setTimeout(() => callNextCard(), 400);
+          }
+        } else {
+          // Not on board — correct to ignore
+          setTimeout(() => callNextCard(), 200);
+        }
+      }
+    }, interval);
+  }, [deck, endGame]);
+
+  const startGame = useCallback(() => {
+    clearInterval(cardTimerRef.current);
     const newBoard = createBoard(deck);
-    const rest = shuffle([...deck]); // include ALL cards so board cards can be called
-    setBoard(newBoard);
-    setRemaining(rest);
-    setLives(3);
-    setScore(0);
-    setStreak(0);
+    boardRef.current = newBoard;
+    setBoardDisplay(newBoard);
+    currentCardRef.current = null;
+    setCurrentCardDisplay(null);
+    livesRef.current = 3;
+    setLivesDisplay(3);
+    scoreRef.current = 0;
+    setScoreDisplay(0);
+    streakRef.current = 0;
+    cardsCompletedRef.current = 0;
     setCardsCompleted(0);
     setShowConfetti(false);
-    setCurrentCard(null);
+    phaseRef.current = 'countdown';
+    setTimerPct(100);
   }, [deck]);
 
   // Countdown
   useEffect(() => {
     if (phase !== 'countdown') return;
-    if (countdown <= 0) { setPhase('playing'); return; }
+    if (countdown <= 0) {
+      phaseRef.current = 'playing';
+      setPhase('playing');
+      setTimeout(() => callNextCard(), 300);
+      return;
+    }
     const t = setTimeout(() => setCountdown(c => c - 1), 1000);
     return () => clearTimeout(t);
-  }, [phase, countdown]);
-
-  // Call next card when playing
-  const callNext = useCallback(() => {
-    setRemaining(prev => {
-      // Find a card that's on the board
-      const boardIds = board.map(c => c.id);
-      const onBoard = prev.filter(c => boardIds.includes(c.id));
-      const offBoard = prev.filter(c => !boardIds.includes(c.id));
-
-      // Mix: 70% chance it's on the board (makes game interesting)
-      const pool = Math.random() < 0.7 && onBoard.length > 0 ? onBoard : prev;
-      if (pool.length === 0) {
-        // Won — survived all cards
-        setPhase('won');
-        setShowConfetti(true);
-        addPesos(100 + score);
-        return prev;
-      }
-
-      const [next, ...rest] = pool;
-      const newRemaining = prev.filter(c => c !== next);
-
-      setCurrentCard(next);
-      speakCard(next);
-
-      // Speed increases as score goes up
-      const speed = Math.max(1.5, 3 - Math.floor(score / 300) * 0.3);
-      setCardTimeLimit(speed);
-      setTimeLeft(speed);
-
-      return newRemaining;
-    });
-  }, [board, score, addPesos]);
-
-  // Card countdown timer
-  useEffect(() => {
-    if (phase !== 'playing' || !currentCard) return;
-    clearInterval(cardTimerRef.current);
-    cardTimerRef.current = setInterval(() => {
-      setTimeLeft(t => {
-        if (t <= 0.1) {
-          // Time's up on this card — check if it was on board
-          const isOnBoard = board.find(c => c.id === currentCard.id);
-          if (isOnBoard) {
-            // Was on board and they didn't tap — lose a life
-            hapticError();
-            setLives(l => {
-              const newLives = l - 1;
-              if (newLives <= 0) {
-                clearInterval(cardTimerRef.current);
-                setPhase('lost');
-              } else {
-                showFeedback('MISSED! -1 ❤️', '#ff4444');
-                setStreak(0);
-                callNext();
-              }
-              return newLives;
-            });
-          } else {
-            // Not on board — correct to ignore, keep going
-            callNext();
-          }
-          return 0;
-        }
-        return parseFloat((t - 0.05).toFixed(2));
-      });
-    }, 50);
-    return () => clearInterval(cardTimerRef.current);
-  }, [phase, currentCard, board, callNext]);
+  }, [phase, countdown, callNextCard]);
 
   const handleTap = (idx) => {
-    if (phase !== 'playing' || !currentCard) return;
-    const tappedCard = board[idx];
+    if (phaseRef.current !== 'playing' || !currentCardRef.current) return;
+    const tappedCard = boardRef.current[idx];
+    if (!tappedCard) return;
+
     clearInterval(cardTimerRef.current);
 
-    if (tappedCard.id === currentCard.id) {
+    if (tappedCard.id === currentCardRef.current.id) {
       // Correct!
       hapticLight();
-      const newStreak = streak + 1;
-      setStreak(newStreak);
-      const pts = 100 + (newStreak > 1 ? newStreak * 20 : 0);
-      setScore(s => s + pts);
-      setCardsCompleted(c => c + 1);
-      showFeedback(newStreak > 2 ? `🔥 x${newStreak} +${pts}` : `+${pts}`, 'var(--gold)');
-      callNext();
+      streakRef.current += 1;
+      const pts = 100 + (streakRef.current > 1 ? streakRef.current * 20 : 0);
+      scoreRef.current += pts;
+      setScoreDisplay(scoreRef.current);
+      cardsCompletedRef.current += 1;
+      setCardsCompleted(cardsCompletedRef.current);
+      showFeedback(streakRef.current > 2 ? `🔥 x${streakRef.current} +${pts}` : `+${pts}`, 'var(--gold)');
+      setTimeout(() => callNextCard(), 200);
     } else {
-      // Wrong card
+      // Wrong!
       hapticError();
-      setStreak(0);
-      setScore(s => Math.max(0, s - 50));
-      setLives(l => {
-        const newLives = l - 1;
-        if (newLives <= 0) {
-          clearInterval(cardTimerRef.current);
-          setPhase('lost');
-        } else {
-          showFeedback('WRONG! -1 ❤️', '#ff4444');
-          callNext();
-        }
-        return newLives;
-      });
+      streakRef.current = 0;
+      scoreRef.current = Math.max(0, scoreRef.current - 50);
+      setScoreDisplay(scoreRef.current);
+      livesRef.current -= 1;
+      setLivesDisplay(livesRef.current);
+      if (livesRef.current <= 0) {
+        endGame(false);
+      } else {
+        showFeedback('WRONG! -❤️', '#ff4444');
+        setTimeout(() => callNextCard(), 400);
+      }
     }
   };
 
-  const showFeedback = (msg, color) => {
-    clearTimeout(feedbackRef.current);
-    setFeedback({ msg, color });
-    feedbackRef.current = setTimeout(() => setFeedback(null), 800);
-  };
-
-  const timerPct = (timeLeft / cardTimeLimit) * 100;
+  useEffect(() => {
+    return () => {
+      clearInterval(cardTimerRef.current);
+      clearTimeout(feedbackTimerRef.current);
+    };
+  }, []);
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--navy)', overflow: 'hidden' }}>
+    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--navy)', overflow: 'hidden' }}>
       {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} numberOfPieces={250} />}
 
       {/* Header */}
-      <div style={{ padding: '12px 16px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ padding: '12px 16px 8px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button className="btn btn-icon" onClick={() => { clearInterval(cardTimerRef.current); setMode('mini-games'); }}>←</button>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 11, letterSpacing: 3, color: 'rgba(245,200,66,0.6)' }}>MINI GAME</div>
           <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 22, color: 'var(--cream)', letterSpacing: 1 }}>⚡ LIGHTNING ROUND</div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 18 }}>{'❤️'.repeat(lives)}{'🖤'.repeat(3 - lives)}</div>
-          <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 20, color: 'var(--gold)', lineHeight: 1 }}>{score}</div>
+          <div style={{ fontSize: 18 }}>{'❤️'.repeat(Math.max(0, livesDisplay))}{'🖤'.repeat(Math.max(0, 3 - livesDisplay))}</div>
+          <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 20, color: 'var(--gold)', lineHeight: 1 }}>{scoreDisplay}</div>
         </div>
       </div>
 
@@ -182,8 +209,8 @@ export default function LightningRoundScreen() {
           <div style={{ fontSize: 72, marginBottom: 12 }}>⚡</div>
           <h2 style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 40, color: '#F5C842', marginBottom: 12 }}>LIGHTNING ROUND</h2>
           <p style={{ color: 'rgba(255,255,255,0.6)', maxWidth: 300, lineHeight: 1.7, marginBottom: 32 }}>
-            A card gets called — find it on your board and <strong style={{ color: 'white' }}>tap it fast!</strong> 
-            <br/><br/>Miss 3 cards and it's game over. The cards speed up as you score more. Survive as long as you can!
+            A card gets called — find it on your board and <strong style={{ color: 'white' }}>tap it fast!</strong>
+            <br/><br/>Miss 3 and it's over. Cards speed up as you score!
           </p>
           <div style={{ display: 'flex', gap: 24, marginBottom: 32 }}>
             {[['❤️ x3', 'lives'], ['⚡ 3s', 'per card'], ['🔥 combo', 'bonus']].map(([icon, label]) => (
@@ -194,7 +221,7 @@ export default function LightningRoundScreen() {
             ))}
           </div>
           <button className="btn btn-gold" style={{ width: '100%', maxWidth: 320, padding: '18px', fontSize: 18 }}
-            onClick={() => { initGame(); setPhase('countdown'); setCountdown(3); }}>
+            onClick={() => { startGame(); setCountdown(3); setPhase('countdown'); }}>
             ⚡ START!
           </button>
         </div>
@@ -212,65 +239,63 @@ export default function LightningRoundScreen() {
       {/* Playing */}
       {phase === 'playing' && (
         <>
-          {/* Current card */}
-          <div style={{ padding: '4px 16px 8px', flexShrink: 0 }}>
-            {currentCard ? (
+          {/* Current card banner */}
+          <div style={{ padding: '4px 12px 6px', flexShrink: 0 }}>
+            {currentCardDisplay ? (
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 12,
                 background: timerPct < 30 ? 'rgba(214,48,48,0.15)' : 'rgba(255,255,255,0.05)',
-                border: `1px solid ${timerPct < 30 ? 'rgba(214,48,48,0.4)' : 'rgba(255,255,255,0.1)'}`,
-                borderRadius: 14, padding: '10px 14px', transition: 'all 0.3s',
+                border: `1px solid ${timerPct < 30 ? 'rgba(214,48,48,0.5)' : 'rgba(255,255,255,0.1)'}`,
+                borderRadius: 14, padding: '8px 12px', transition: 'all 0.3s',
               }}>
-                <div style={{
-                  width: 48, background: 'white', borderRadius: 8,
-                  flexShrink: 0, overflow: 'hidden', padding: 3,
-                }}>
-                  <CardDisplay card={currentCard} />
+                <div style={{ width: 44, background: 'white', borderRadius: 8, flexShrink: 0, overflow: 'hidden', padding: 2 }}>
+                  <CardDisplay card={currentCardDisplay} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 22, color: 'var(--gold)', letterSpacing: 1 }}>
-                    {currentCard.name.toUpperCase()}
+                  <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 20, color: 'var(--gold)', letterSpacing: 1 }}>
+                    {currentCardDisplay.name.toUpperCase()}
                   </div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>
-                    {board.find(c => c.id === currentCard.id) ? '👆 TAP IT ON YOUR BOARD!' : '⬇️ Not on your board'}
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 5 }}>
+                    {boardRef.current.find(c => c.id === currentCardDisplay.id) ? '👆 TAP IT ON YOUR BOARD!' : '⬇️ Not on your board — ignore it'}
                   </div>
-                  {/* Card timer */}
-                  <div style={{ height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 100 }}>
+                  <div style={{ height: 5, background: 'rgba(255,255,255,0.1)', borderRadius: 100 }}>
                     <div style={{
                       height: '100%', borderRadius: 100,
                       background: timerPct < 30 ? '#ff4444' : timerPct < 60 ? 'var(--gold)' : 'var(--teal)',
-                      width: `${timerPct}%`, transition: 'width 0.05s linear, background 0.3s',
+                      width: `${timerPct}%`, transition: 'width 0.05s linear',
                     }} />
                   </div>
                 </div>
               </div>
-            ) : (
-              <div style={{ height: 64 }} />
-            )}
+            ) : <div style={{ height: 60 }} />}
           </div>
 
-          {/* Board */}
-          <div style={{ flex: 1, padding: '0 10px 10px', overflowY: 'auto' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 5, width: '100%' }}>
-              {board.map((card, idx) => {
-                const isTarget = currentCard && card.id === currentCard.id;
+          {/* Board — 4x4 grid fitting screen */}
+          <div style={{ flex: 1, padding: '0 8px 8px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gridTemplateRows: 'repeat(4, 1fr)', gap: 5, flex: 1 }}>
+              {boardDisplay.map((card, idx) => {
+                const isTarget = currentCardDisplay && card.id === currentCardDisplay.id;
                 return (
                   <div
                     key={card.id}
                     onClick={() => handleTap(idx)}
                     style={{
-                      background: isTarget && timerPct < 30 ? '#fff5f5' : 'white',
-                      borderRadius: 8, padding: '4px 3px 3px',
+                      background: 'white',
+                      borderRadius: 8,
+                      padding: '3px 2px 2px',
                       border: isTarget ? `2.5px solid ${timerPct < 30 ? '#ff4444' : 'var(--gold)'}` : '1.5px solid #ddd',
                       display: 'flex', flexDirection: 'column', alignItems: 'center',
-                      cursor: 'pointer', position: 'relative',
-                      boxShadow: isTarget ? `0 0 10px ${timerPct < 30 ? 'rgba(255,68,68,0.4)' : 'rgba(245,200,66,0.4)'}` : 'none',
+                      cursor: 'pointer', overflow: 'hidden',
+                      boxShadow: isTarget ? `0 0 12px ${timerPct < 30 ? 'rgba(255,68,68,0.5)' : 'rgba(245,200,66,0.5)'}` : 'none',
+                      transform: isTarget ? 'scale(1.03)' : 'scale(1)',
                       transition: 'all 0.15s',
-                      animation: isTarget && timerPct < 30 ? 'pulse-ring 0.5s ease infinite' : 'none',
+                      WebkitTapHighlightColor: 'transparent',
                     }}
                   >
-                    <CardDisplay card={card} />
-                    <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 8, color: '#1a1a1a', textAlign: 'center', letterSpacing: 0.3, lineHeight: 1, marginTop: 2, width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      <CardDisplay card={card} />
+                    </div>
+                    <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 7, color: '#1a1a1a', textAlign: 'center', letterSpacing: 0.3, lineHeight: 1, width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '1px 2px' }}>
                       {card.name.toUpperCase()}
                     </div>
                   </div>
@@ -281,7 +306,7 @@ export default function LightningRoundScreen() {
         </>
       )}
 
-      {/* Feedback */}
+      {/* Feedback toast */}
       {feedback && (
         <div style={{
           position: 'fixed', top: '25%', left: '50%', transform: 'translateX(-50%)',
@@ -299,10 +324,10 @@ export default function LightningRoundScreen() {
           <div style={{ fontSize: 64, marginBottom: 8 }}>⚡</div>
           <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 48, color: 'var(--gold)', letterSpacing: 2 }}>LEGEND!</div>
           <div style={{ color: 'rgba(255,255,255,0.6)', margin: '8px 0 24px' }}>You survived the full deck!</div>
-          <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 40, color: 'var(--cream)', marginBottom: 8 }}>{score.toLocaleString()}</div>
-          <div style={{ color: 'var(--gold)', fontWeight: 700, marginBottom: 24 }}>+{100 + score} 🪙 earned!</div>
+          <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 40, color: 'var(--cream)', marginBottom: 8 }}>{scoreDisplay.toLocaleString()}</div>
+          <div style={{ color: 'var(--gold)', fontWeight: 700, marginBottom: 24 }}>+{100 + scoreDisplay} 🪙 earned!</div>
           <div style={{ display: 'flex', gap: 12 }}>
-            <button className="btn btn-gold" onClick={() => { initGame(); setPhase('countdown'); setCountdown(3); }}>↺ Again</button>
+            <button className="btn btn-gold" onClick={() => { startGame(); setCountdown(3); setPhase('countdown'); }}>↺ Again</button>
             <button className="btn btn-ghost" onClick={() => setMode('mini-games')}>← Games</button>
           </div>
         </div>
@@ -314,9 +339,9 @@ export default function LightningRoundScreen() {
           <div style={{ fontSize: 64, marginBottom: 8 }}>💀</div>
           <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 40, color: 'var(--red)', letterSpacing: 2 }}>3 STRIKES!</div>
           <div style={{ color: 'rgba(255,255,255,0.5)', margin: '8px 0 16px' }}>You got {cardsCompleted} cards right</div>
-          <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 40, color: 'var(--cream)', marginBottom: 24 }}>{score.toLocaleString()} pts</div>
+          <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 40, color: 'var(--cream)', marginBottom: 24 }}>{scoreDisplay.toLocaleString()} pts</div>
           <div style={{ display: 'flex', gap: 12 }}>
-            <button className="btn btn-gold" onClick={() => { initGame(); setPhase('countdown'); setCountdown(3); }}>Try Again</button>
+            <button className="btn btn-gold" onClick={() => { startGame(); setCountdown(3); setPhase('countdown'); }}>Try Again</button>
             <button className="btn btn-ghost" onClick={() => setMode('mini-games')}>← Games</button>
           </div>
         </div>

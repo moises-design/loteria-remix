@@ -3,7 +3,7 @@ import Confetti from 'react-confetti';
 import { CardDisplay } from '../components/CardDisplay';
 import { useGameStore } from '../store/gameStore';
 import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle } from '../data/decks';
-import { speakCard, stopSpeech, unlockSpeech } from '../utils/voice';
+import { speakCard, stopSpeech, unlockSpeech, speakCorrerSeVa, speakLoteria } from '../utils/voice';
 
 export default function ClassicCallerScreen() {
   const { setMode, activeDeck, photoAssignments } = useGameStore();
@@ -66,6 +66,7 @@ export default function ClassicCallerScreen() {
   const handleStart = () => {
     unlockSpeech();
     setPhase('announcing');
+    speakCorrerSeVa();
     setTimeout(() => {
       setPhase('playing');
       callNext();
@@ -247,7 +248,7 @@ export default function ClassicCallerScreen() {
               >
                 {autoPlay && phase === 'playing' ? `AUTO · ${timer.toFixed(1)}s` : '→ SIGUIENTE'}
               </button>
-              <button className="btn btn-icon" onClick={() => { setPhase('winner-check'); setShowWinnerConfetti(true); }} style={{ width: 52, height: 52, fontSize: 22 }} title="Someone called Lotería!">
+              <button className="btn btn-icon" onClick={() => { setPhase('winner-check'); setShowWinnerConfetti(true); speakLoteria(); }} style={{ width: 52, height: 52, fontSize: 22 }} title="Someone called Lotería!">
                 🏆
               </button>
             </div>

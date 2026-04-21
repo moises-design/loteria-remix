@@ -33,7 +33,7 @@ export function CardDisplay({ card, style = {}, imgStyle = {}, className = '' })
       <div style={{ position: 'absolute', top: 4, right: 4, width: 5, height: 5, borderRadius: '50%', background: card.color + '66' }} />
       <div style={{ position: 'absolute', bottom: 4, left: 4, width: 5, height: 5, borderRadius: '50%', background: card.color + '66' }} />
       <div style={{ position: 'absolute', bottom: 4, right: 4, width: 5, height: 5, borderRadius: '50%', background: card.color + '66' }} />
-      <div style={{ fontSize: 'clamp(20px, 6vw, 44px)', lineHeight: 1, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}>
+      <div style={{ fontSize: 'clamp(28px, 8vw, 56px)', lineHeight: 1, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}>
         {card.emoji}
       </div>
     </div>

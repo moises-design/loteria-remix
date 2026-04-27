@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameStore } from './store/gameStore';
+import { unlockAudio } from './utils/haptics';
 import HomeScreen from './screens/HomeScreen';
 import ClassicMenuScreen from './screens/ClassicMenuScreen';
 import ClassicSingleScreen from './screens/ClassicSingleScreen';
@@ -24,6 +25,12 @@ const ONBOARDING_KEY = 'loteria-onboarded-v1';
 export default function App() {
   const { mode } = useGameStore();
   const [onboarded, setOnboarded] = useState(() => !!localStorage.getItem(ONBOARDING_KEY));
+
+  useEffect(() => {
+    const unlock = () => unlockAudio();
+    window.addEventListener('pointerdown', unlock, { once: true });
+    return () => window.removeEventListener('pointerdown', unlock);
+  }, []);
 
   if (!onboarded) {
     return (

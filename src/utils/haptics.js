@@ -39,14 +39,25 @@ export async function hapticError() {
 
 // Web Audio API sound effects
 let audioCtx = null;
+
 function getCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return audioCtx;
 }
 
-export function playTone(freq, duration, type = 'sine', volume = 0.15) {
+// Call once on any user gesture (click/tap) so the context is pre-unlocked
+// for all subsequent programmatic sound calls.
+export function unlockAudio() {
   try {
     const ctx = getCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+  } catch {}
+}
+
+export async function playTone(freq, duration, type = 'sine', volume = 0.15) {
+  try {
+    const ctx = getCtx();
+    if (ctx.state === 'suspended') await ctx.resume();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);

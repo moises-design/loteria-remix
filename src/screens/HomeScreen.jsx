@@ -2,8 +2,18 @@ import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { EmailCaptureBanner, EmailCaptureModal } from '../components/EmailCapture';
 import { AddToHomeScreenBanner } from '../components/AddToHomeScreen';
+import { todayStr, hasTodayRecord } from '../utils/daily';
 
 const MODES = [
+  {
+    id: 'daily-challenge',
+    label: 'DAILY',
+    sub: 'One shot per day — same for everyone',
+    emoji: '📅',
+    gradient: 'linear-gradient(135deg, #1a3a5c, #2980b9)',
+    accent: '#74b9ff',
+    tag: todayStr(),
+  },
   {
     id: 'classic-menu',
     label: 'CLASSIC',
@@ -132,33 +142,46 @@ export default function HomeScreen() {
         <AddToHomeScreenBanner />
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          {MODES.map((m) => (
-            <button
-              key={m.id}
-              className="btn"
-              onClick={() => setMode(m.id)}
-              style={{
-                background: m.gradient, borderRadius: 20,
-                padding: '24px 16px', flexDirection: 'column', alignItems: 'flex-start',
-                border: '1px solid rgba(255,255,255,0.1)',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-            >
-              <div style={{ fontSize: 36, marginBottom: 10 }}>{m.emoji}</div>
-              <div style={{
-                fontFamily: 'Bebas Neue, sans-serif', fontSize: 22,
-                color: 'white', letterSpacing: 1, lineHeight: 1, marginBottom: 4,
-              }}>{m.label}</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 10, textAlign: 'left', lineHeight: 1.3 }}>{m.sub}</div>
-              <div style={{
-                background: 'rgba(255,255,255,0.15)', borderRadius: 100,
-                padding: '3px 10px', fontSize: 11, color: 'rgba(255,255,255,0.9)', fontWeight: 600,
-              }}>{m.tag}</div>
-            </button>
-          ))}
+          {MODES.map((m) => {
+            const isDaily = m.id === 'daily-challenge';
+            const dailyPlayed = isDaily && hasTodayRecord();
+            return (
+              <button
+                key={m.id}
+                className="btn"
+                onClick={() => setMode(m.id)}
+                style={{
+                  background: m.gradient, borderRadius: 20,
+                  padding: '24px 16px', flexDirection: 'column', alignItems: 'flex-start',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                  transition: 'all 0.2s',
+                  position: 'relative',
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                {dailyPlayed && (
+                  <div style={{
+                    position: 'absolute', top: 10, right: 10,
+                    background: 'rgba(78,203,160,0.25)', border: '1px solid rgba(78,203,160,0.6)',
+                    borderRadius: 100, padding: '2px 8px',
+                    fontSize: 10, color: '#4ecba0', fontWeight: 700, letterSpacing: 0.5,
+                  }}>✓ Played</div>
+                )}
+                <div style={{ fontSize: 36, marginBottom: 10 }}>{m.emoji}</div>
+                <div style={{
+                  fontFamily: 'Bebas Neue, sans-serif', fontSize: 22,
+                  color: 'white', letterSpacing: 1, lineHeight: 1, marginBottom: 4,
+                }}>{m.label}</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 10, textAlign: 'left', lineHeight: 1.3 }}>{m.sub}</div>
+                <div style={{
+                  background: 'rgba(255,255,255,0.15)', borderRadius: 100,
+                  padding: '3px 10px', fontSize: 11, color: 'rgba(255,255,255,0.9)', fontWeight: 600,
+                }}>{m.tag}</div>
+              </button>
+            );
+          })}
         </div>
 
         {/* Footer hint */}

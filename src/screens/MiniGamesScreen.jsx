@@ -37,6 +37,24 @@ const GAMES = [
     tag: '📚 Quiz',
     reward: 'Up to +120 🪙',
   },
+  {
+    id: 'study-mode',
+    name: 'Study Mode',
+    emoji: '📖',
+    desc: 'Flip through all 54 cards with name, image & riddle. Learn the deck!',
+    gradient: 'linear-gradient(135deg, #2c3e50, #4ca1af)',
+    tag: '📚 Learn',
+    reward: 'Free',
+  },
+  {
+    id: 'leaderboard',
+    name: 'Leaderboard',
+    emoji: '🏆',
+    desc: 'See the top scores for every mini game. Can you make the board?',
+    gradient: 'linear-gradient(135deg, #7F6000, #F9A825)',
+    tag: '👑 Rankings',
+    reward: 'Glory',
+  },
 ];
 
 export default function MiniGamesScreen() {

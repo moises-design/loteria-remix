@@ -5,10 +5,12 @@ import { useGameStore } from '../store/gameStore';
 import { CLASSIC_DECK, MILLENNIAL_DECK, shuffle } from '../data/decks';
 import { speakCard } from '../utils/voice';
 import { hapticLight, hapticMedium, hapticError, hapticSuccess } from '../utils/haptics';
+import { SubmitScore } from '../components/SubmitScore';
 import Confetti from 'react-confetti';
 
 const TARGET_SCORE = 1000;
 const FALL_DURATION = 2800; // ms for card to fall
+const BOSS_DURATION = 4500;
 
 export default function CardBlitzScreen() {
   const { setMode, addPesos, activeDeck } = useGameStore();
@@ -30,6 +32,8 @@ export default function CardBlitzScreen() {
   const deckQueueRef = useRef([]);
   const phaseRef = useRef('setup');
   const scoreRef = useRef(0);
+  const correctCountRef = useRef(0);
+  const bossNextRef = useRef(false);
 
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
@@ -46,20 +50,27 @@ export default function CardBlitzScreen() {
     return deckQueueRef.current.shift();
   }, [deck]);
 
-  const spawnCard = useCallback((forceWrong = false) => {
-    const isTarget = !forceWrong && Math.random() < 0.45; // 45% chance it's the target
-    const card = isTarget ? targetCard : shuffle(deck.filter(c => c.id !== targetCard?.id))[0];
+  const spawnCard = useCallback((forceBoss = false) => {
+    let card, isTarget, isBoss = false, duration = FALL_DURATION;
+    if (forceBoss && targetCard) {
+      card = targetCard;
+      isTarget = true;
+      isBoss = true;
+      duration = BOSS_DURATION;
+    } else {
+      isTarget = Math.random() < 0.45;
+      card = isTarget ? targetCard : shuffle(deck.filter(c => c.id !== targetCard?.id))[0];
+    }
     if (!card) return;
 
-    const lane = Math.floor(Math.random() * 4); // 0-3 columns
+    const lane = Math.floor(Math.random() * 4);
     const uid = ++cardIdRef.current;
 
     setFallingCards(prev => [...prev, {
-      uid, card, isTarget, lane,
+      uid, card, isTarget, isBoss, duration, lane,
       startTime: Date.now(),
     }]);
 
-    // Remove card after it falls off screen
     setTimeout(() => {
       if (phaseRef.current !== 'playing') {
         setFallingCards(prev => prev.filter(c => c.uid !== uid));
@@ -68,20 +79,23 @@ export default function CardBlitzScreen() {
       setFallingCards(prev => {
         const stillThere = prev.find(c => c.uid === uid);
         if (stillThere && stillThere.isTarget) {
-          // Target card escaped!
-          setLives(l => {
-            const newLives = l - 1;
-            if (newLives <= 0) {
-              clearInterval(spawnRef.current);
-              setPhase('lost');
-            }
-            return newLives;
-          });
-          showFeed('MISSED! -❤️', '#ff4444');
+          if (stillThere.isBoss) {
+            showFeed('BOSS ESCAPED! 👑', '#FFD700');
+          } else {
+            setLives(l => {
+              const newLives = l - 1;
+              if (newLives <= 0) {
+                clearInterval(spawnRef.current);
+                setPhase('lost');
+              }
+              return newLives;
+            });
+            showFeed('MISSED! -❤️', '#ff4444');
+          }
         }
         return prev.filter(c => c.uid !== uid);
       });
-    }, FALL_DURATION + 200);
+    }, duration + 200);
   }, [targetCard, deck]);
 
   const startGame = () => {
@@ -95,6 +109,8 @@ export default function CardBlitzScreen() {
     setFallingCards([]);
     setShowConfetti(false);
     cardIdRef.current = 0;
+    correctCountRef.current = 0;
+    bossNextRef.current = false;
     setPhase('countdown');
     setCountdown(3);
   };
@@ -133,7 +149,7 @@ export default function CardBlitzScreen() {
       hapticLight();
       const newStreak = streak + 1;
       setStreak(newStreak);
-      const pts = 100 + (newStreak > 1 ? newStreak * 20 : 0);
+      const pts = card.isBoss ? (500 + newStreak * 30) : (100 + (newStreak > 1 ? newStreak * 20 : 0));
       setScore(s => {
         const newScore = s + pts;
         scoreRef.current = newScore;
@@ -146,7 +162,15 @@ export default function CardBlitzScreen() {
         }
         return newScore;
       });
-      showFeed(newStreak > 2 ? `🔥 x${newStreak}  +${pts}` : `+${pts}`, 'var(--gold)');
+      if (card.isBoss) {
+        showFeed(`👑 BOSS! +${pts}`, '#FFD700');
+      } else {
+        showFeed(newStreak > 2 ? `🔥 x${newStreak}  +${pts}` : `+${pts}`, 'var(--gold)');
+      }
+      correctCountRef.current++;
+      if (correctCountRef.current % 10 === 0) {
+        spawnCard(true);
+      }
       // Change target card after every 5 correct
       if (newStreak % 5 === 0) {
         const next = getNextTarget();
@@ -278,19 +302,27 @@ export default function CardBlitzScreen() {
                     left: `${left}%`,
                     top: '-80px',
                     transform: 'translateX(-50%)',
-                    animation: `fall ${FALL_DURATION}ms linear forwards`,
+                    animation: `fall ${fc.duration}ms linear forwards`,
                     cursor: 'pointer',
-                    zIndex: 5,
+                    zIndex: fc.isBoss ? 6 : 5,
                     WebkitTapHighlightColor: 'transparent',
                   }}
                 >
                   <div style={{
-                    width: 64, background: 'white',
+                    width: fc.isBoss ? 76 : 64, background: 'white',
                     borderRadius: 10, padding: '6px 4px 4px',
-                    border: fc.isTarget ? '2.5px solid var(--gold)' : '1.5px solid #ddd',
+                    border: fc.isBoss
+                      ? '4px solid #FFD700'
+                      : fc.isTarget ? '2.5px solid var(--gold)' : '1.5px solid #ddd',
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    boxShadow: fc.isTarget ? '0 0 12px rgba(245,200,66,0.5)' : '0 4px 12px rgba(0,0,0,0.3)',
+                    position: 'relative',
+                    boxShadow: fc.isBoss
+                      ? '0 0 24px rgba(255,215,0,0.9)'
+                      : fc.isTarget ? '0 0 12px rgba(245,200,66,0.5)' : '0 4px 12px rgba(0,0,0,0.3)',
                   }}>
+                    {fc.isBoss && (
+                      <div style={{ position: 'absolute', top: -8, right: -8, fontSize: 22, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))' }}>👑</div>
+                    )}
                     <CardDisplay card={fc.card} />
                     <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 8, color: '#1a1a1a', textAlign: 'center', marginTop: 3, lineHeight: 1, letterSpacing: 0.3, whiteSpace: 'pre-line' }}>
                       {fc.card.name.split(' ').map(w => w.toUpperCase()).join('\n')}
@@ -317,12 +349,15 @@ export default function CardBlitzScreen() {
 
       {/* Won */}
       {phase === 'won' && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 24 }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 24, overflowY: 'auto' }}>
           <div style={{ fontSize: 72, marginBottom: 8 }}>🎯</div>
           <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 48, color: 'var(--gold)', letterSpacing: 2 }}>BLITZ COMPLETE!</div>
           <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 36, color: 'var(--cream)', margin: '12px 0' }}>{score} pts</div>
-          <div style={{ color: 'var(--gold)', fontWeight: 700, marginBottom: 28 }}>+{150 + Math.floor(score / 50)} 🪙 earned!</div>
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ color: 'var(--gold)', fontWeight: 700, marginBottom: 16 }}>+{150 + Math.floor(score / 50)} 🪙 earned!</div>
+          <div style={{ width: '100%', maxWidth: 360 }}>
+            <SubmitScore gameMode="card-blitz" score={score} />
+          </div>
+          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
             <button className="btn btn-gold" onClick={startGame}>↺ Again</button>
             <button className="btn btn-ghost" onClick={() => setMode('mini-games')}>← Games</button>
           </div>
@@ -331,12 +366,15 @@ export default function CardBlitzScreen() {
 
       {/* Lost */}
       {phase === 'lost' && (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 24 }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 24, overflowY: 'auto' }}>
           <div style={{ fontSize: 64, marginBottom: 8 }}>💀</div>
           <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 40, color: 'var(--red)', letterSpacing: 2 }}>GAME OVER!</div>
           <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 40, color: 'var(--cream)', margin: '12px 0' }}>{score} / {TARGET_SCORE}</div>
-          <div style={{ color: 'rgba(255,255,255,0.5)', marginBottom: 28 }}>Need {TARGET_SCORE - score} more points next time</div>
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>Need {TARGET_SCORE - score} more points next time</div>
+          <div style={{ width: '100%', maxWidth: 360 }}>
+            <SubmitScore gameMode="card-blitz" score={score} />
+          </div>
+          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
             <button className="btn btn-gold" onClick={startGame}>Try Again</button>
             <button className="btn btn-ghost" onClick={() => setMode('mini-games')}>← Games</button>
           </div>

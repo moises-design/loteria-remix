@@ -21,3 +21,24 @@ export async function saveEmail(email, name = '') {
     }]);
   return { error };
 }
+
+export const isSupabaseConfigured = !!SUPABASE_URL;
+
+export async function submitScore(gameMode, score, nickname) {
+  if (!SUPABASE_URL) return { error: null };
+  const { error } = await supabase
+    .from('scores')
+    .insert([{ game_mode: gameMode, score, nickname: nickname.trim().slice(0, 20), created_at: new Date().toISOString() }]);
+  return { error };
+}
+
+export async function getLeaderboard(gameMode, limit = 10) {
+  if (!SUPABASE_URL) return { data: [], error: null };
+  const { data, error } = await supabase
+    .from('scores')
+    .select('nickname, score, created_at')
+    .eq('game_mode', gameMode)
+    .order('score', { ascending: false })
+    .limit(limit);
+  return { data: data || [], error };
+}

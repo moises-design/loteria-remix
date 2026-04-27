@@ -48,6 +48,10 @@ export const useGameStore = create(
       // Selected level for play
       selectedLevel: 1,
       setSelectedLevel: (level) => set({ selectedLevel: level }),
+
+      // Leaderboard nickname
+      nickname: '',
+      setNickname: (n) => set({ nickname: n }),
     }),
     { name: 'loteria-remix-storage' }
   )

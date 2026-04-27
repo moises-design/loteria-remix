@@ -14,6 +14,9 @@ import MatchPairsScreen from './screens/MatchPairsScreen';
 import LightningRoundScreen from './screens/LightningRoundScreen';
 import NameItScreen from './screens/NameItScreen';
 import CardBlitzScreen from './screens/CardBlitzScreen';
+import DailyChallengeScreen from './screens/DailyChallengeScreen';
+import LeaderboardScreen from './screens/LeaderboardScreen';
+import StudyModeScreen from './screens/StudyModeScreen';
 import './styles/global.css';
 
 const ONBOARDING_KEY = 'loteria-onboarded-v1';
@@ -44,6 +47,9 @@ export default function App() {
     'lightning-round': LightningRoundScreen,
     'name-it': NameItScreen,
     'card-blitz': CardBlitzScreen,
+    'daily-challenge': DailyChallengeScreen,
+    'leaderboard': LeaderboardScreen,
+    'study-mode': StudyModeScreen,
   };
 
   const Screen = screens[mode] || HomeScreen;

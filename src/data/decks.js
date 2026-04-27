@@ -123,8 +123,8 @@ export function shuffle(deck) {
   return a;
 }
 
-export function createBoard(deck) {
-  return shuffle([...deck]).slice(0, 16);
+export function createBoard(deck, size = 16) {
+  return shuffle([...deck]).slice(0, size);
 }
 
 export const WINNING_LINES = [

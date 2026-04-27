@@ -23,6 +23,7 @@ export default function ActItOutScreen() {
   const [tiltDir, setTiltDir] = useState(null); // 'up' | 'down'
   const timerRef = useRef(null);
   const betaRef = useRef(null);
+  const tiltDirRef = useRef(null);
 
   const initGame = () => {
     setRemaining(shuffle([...deck]));
@@ -32,26 +33,29 @@ export default function ActItOutScreen() {
     setPhase('ready');
   };
 
-  // Device tilt detection
+  // Device tilt detection — use tiltDirRef to avoid rebinding on every tilt change
   useEffect(() => {
     if (phase !== 'playing') return;
     const handleOrientation = (e) => {
-      const beta = e.beta; // -180 to 180, 0 is flat, 90 is upright
+      const beta = e.beta;
       if (betaRef.current === null) { betaRef.current = beta; return; }
       const diff = beta - betaRef.current;
-      if (diff < -25 && tiltDir !== 'up') {
+      if (diff < -25 && tiltDirRef.current !== 'up') {
+        tiltDirRef.current = 'up';
         setTiltDir('up');
         handleCorrect();
-      } else if (diff > 25 && tiltDir !== 'down') {
+      } else if (diff > 25 && tiltDirRef.current !== 'down') {
+        tiltDirRef.current = 'down';
         setTiltDir('down');
         handleSkip();
       } else if (Math.abs(diff) < 10) {
+        tiltDirRef.current = null;
         setTiltDir(null);
       }
     };
     window.addEventListener('deviceorientation', handleOrientation);
     return () => window.removeEventListener('deviceorientation', handleOrientation);
-  }, [phase, tiltDir]);
+  }, [phase]); // removed tiltDir — tiltDirRef tracks current dir without causing rebinds
 
   // Timer
   useEffect(() => {
@@ -71,18 +75,17 @@ export default function ActItOutScreen() {
 
   const startRound = () => {
     betaRef.current = null;
+    tiltDirRef.current = null;
     setTimeLeft(ROUND_TIME);
     setRoundCorrect(0);
     setRoundSkipped(0);
-    setRemaining(r => {
-      if (r.length === 0) {
-        setPhase('game-end');
-        return r;
-      }
-      const [first, ...rest] = r;
-      setCurrentCard(first);
-      return rest;
-    });
+    if (remaining.length === 0) {
+      setPhase('game-end');
+      return;
+    }
+    const [first, ...rest] = remaining;
+    setCurrentCard(first);
+    setRemaining(rest);
     setPhase('playing');
   };
 

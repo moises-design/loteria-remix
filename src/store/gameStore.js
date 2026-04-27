@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+const MAX_LEVEL = 8;
+
 export const useGameStore = create(
   persist(
     (set, get) => ({
@@ -21,10 +23,13 @@ export const useGameStore = create(
         const prev = s.levelScores[level] || 0;
         const newScores = { ...s.levelScores, [level]: Math.max(prev, score) };
         const nextLevel = level + 1;
-        const newUnlocked = s.unlocked.includes(nextLevel)
-          ? s.unlocked
-          : [...s.unlocked, nextLevel];
-        return { levelScores: newScores, unlocked: newUnlocked, currentLevel: nextLevel };
+        const newUnlocked = (nextLevel <= MAX_LEVEL && !s.unlocked.includes(nextLevel))
+          ? [...s.unlocked, nextLevel]
+          : s.unlocked;
+        const newCurrentLevel = level >= s.currentLevel && nextLevel <= MAX_LEVEL
+          ? nextLevel
+          : s.currentLevel;
+        return { levelScores: newScores, unlocked: newUnlocked, currentLevel: newCurrentLevel };
       }),
 
       // Streak

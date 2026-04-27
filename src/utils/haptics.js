@@ -1,8 +1,6 @@
 // Native haptics via Capacitor (falls back gracefully in browser)
 let Haptics = null;
-try {
-  import('@capacitor/haptics').then(m => { Haptics = m.Haptics; });
-} catch {}
+import('@capacitor/haptics').then(m => { Haptics = m.Haptics; }).catch(() => {});
 
 export async function hapticLight() {
   try {

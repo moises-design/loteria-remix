@@ -43,8 +43,20 @@ export default function ClassicSingleScreen() {
   const [timer, setTimer] = useState(config.speed);
   const [pulsingBoard, setPulsingBoard] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [windowSize, setWindowSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   const timerRef = useRef(null);
   const feedbackRef = useRef(null);
+  const pulsingRef = useRef(null);
+
+  useEffect(() => {
+    const onResize = () => setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      clearTimeout(pulsingRef.current);
+      clearTimeout(feedbackRef.current);
+    };
+  }, []);
 
   const initGame = useCallback(() => {
     const newBoard = createBoard(deck);
@@ -86,10 +98,12 @@ export default function ClassicSingleScreen() {
       setCurrentCard(next);
       setCalledCards(c => [next, ...c].slice(0, 8));
       if (soundEnabled()) soundCardFlip();
-      setPulsingBoard(true);
-      setTimeout(() => setPulsingBoard(false), 600);
       return rest;
     });
+    // Pulsing moved outside the updater to avoid StrictMode double-fire
+    clearTimeout(pulsingRef.current);
+    setPulsingBoard(true);
+    pulsingRef.current = setTimeout(() => setPulsingBoard(false), 600);
   }, []);
 
   useEffect(() => {
@@ -162,7 +176,7 @@ export default function ClassicSingleScreen() {
 
   return (
     <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'var(--navy)', overflow:'hidden' }}>
-      {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} numberOfPieces={280} colors={['#F5C842','#D63030','#1D9E75','#E8529A','#FBF5E6']} />}
+      {showConfetti && <Confetti width={windowSize.w} height={windowSize.h} recycle={false} numberOfPieces={280} colors={['#F5C842','#D63030','#1D9E75','#E8529A','#FBF5E6']} />}
 
       <div style={{ padding:'12px 16px 0', flexShrink:0 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>

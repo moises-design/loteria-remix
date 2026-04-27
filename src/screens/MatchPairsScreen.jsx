@@ -28,8 +28,15 @@ export default function MatchPairsScreen() {
   const [lastMatch, setLastMatch] = useState(null);
   const [wrongPair, setWrongPair] = useState([]);
   const [previewing, setPreviewing] = useState(false);
+  const [windowSize, setWindowSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   const timerRef = useRef(null);
   const lockRef = useRef(false);
+
+  useEffect(() => {
+    const onResize = () => setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const startGame = (diff) => {
     setDifficulty(diff);
@@ -69,6 +76,7 @@ export default function MatchPairsScreen() {
   }, [phase]);
 
   const handleFlip = (uid) => {
+    if (previewing) return;
     if (lockRef.current) return;
     if (flipped.includes(uid)) return;
     if (matched.has(uid)) return;
@@ -90,20 +98,20 @@ export default function MatchPairsScreen() {
 
       if (card1.id === card2.id) {
         // Match!
+        const newMatched = new Set(matched);
+        newMatched.add(uid1);
+        newMatched.add(uid2);
+        const isWin = newMatched.size === cards.length;
+        // Clear timer immediately on winning match to prevent timer expiry race
+        if (isWin) clearInterval(timerRef.current);
         setTimeout(() => {
           hapticSuccess();
           setLastMatch(card1.name);
           setTimeout(() => setLastMatch(null), 1200);
-          const newMatched = new Set(matched);
-          newMatched.add(uid1);
-          newMatched.add(uid2);
           setMatched(newMatched);
           setFlipped([]);
           lockRef.current = false;
-
-          // Check win
-          if (newMatched.size === cards.length) {
-            clearInterval(timerRef.current);
+          if (isWin) {
             setPhase('won');
             setShowConfetti(true);
             const cfg = GRID_SIZES[difficulty];
@@ -127,13 +135,14 @@ export default function MatchPairsScreen() {
   const cfg = difficulty ? GRID_SIZES[difficulty] : null;
   const timerPct = cfg ? (timeLeft / (difficulty === 'easy' ? 90 : difficulty === 'medium' ? 75 : 60)) * 100 : 100;
   const timerColor = timerPct < 20 ? '#ff4444' : timerPct < 40 ? 'var(--gold)' : 'var(--teal)';
-  const stars = moves === 0 ? 3 : matched.size === cards.length
-    ? moves <= cfg?.pairs + 2 ? 3 : moves <= cfg?.pairs + 6 ? 2 : 1
+  // Only compute stars when game is won and cfg exists (avoids NaN comparisons during setup)
+  const stars = phase === 'won' && cfg
+    ? (moves <= cfg.pairs + 2 ? 3 : moves <= cfg.pairs + 6 ? 2 : 1)
     : 0;
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--navy)', overflow: 'hidden' }}>
-      {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} numberOfPieces={250} colors={['#F5C842','#D63030','#1D9E75','#E8529A']} />}
+      {showConfetti && <Confetti width={windowSize.w} height={windowSize.h} recycle={false} numberOfPieces={250} colors={['#F5C842','#D63030','#1D9E75','#E8529A']} />}
 
       {/* Header */}
       <div style={{ padding: '12px 16px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

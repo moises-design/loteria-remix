@@ -23,10 +23,21 @@ export default function CardBlitzScreen() {
   const [feedback, setFeedback] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [countdown, setCountdown] = useState(3);
+  const [windowSize, setWindowSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   const spawnRef = useRef(null);
   const feedbackRef = useRef(null);
   const cardIdRef = useRef(0);
   const deckQueueRef = useRef([]);
+  const phaseRef = useRef('setup');
+  const scoreRef = useRef(0);
+
+  useEffect(() => { phaseRef.current = phase; }, [phase]);
+
+  useEffect(() => {
+    const onResize = () => setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const getNextTarget = useCallback(() => {
     if (deckQueueRef.current.length === 0) {
@@ -50,13 +61,20 @@ export default function CardBlitzScreen() {
 
     // Remove card after it falls off screen
     setTimeout(() => {
+      if (phaseRef.current !== 'playing') {
+        setFallingCards(prev => prev.filter(c => c.uid !== uid));
+        return;
+      }
       setFallingCards(prev => {
         const stillThere = prev.find(c => c.uid === uid);
         if (stillThere && stillThere.isTarget) {
           // Target card escaped!
           setLives(l => {
             const newLives = l - 1;
-            if (newLives <= 0) setPhase('lost');
+            if (newLives <= 0) {
+              clearInterval(spawnRef.current);
+              setPhase('lost');
+            }
             return newLives;
           });
           showFeed('MISSED! -❤️', '#ff4444');
@@ -71,6 +89,7 @@ export default function CardBlitzScreen() {
     const first = deckQueueRef.current.shift();
     setTargetCard(first);
     setScore(0);
+    scoreRef.current = 0;
     setLives(3);
     setStreak(0);
     setFallingCards([]);
@@ -93,17 +112,18 @@ export default function CardBlitzScreen() {
     if (targetCard && phase === 'playing') speakCard(targetCard);
   }, [targetCard, phase]);
 
-  // Spawn cards
+  // Spawn cards — only restart on phase/target change, not every score tick
   useEffect(() => {
     if (phase !== 'playing' || !targetCard) return;
-    const speed = Math.max(600, 1200 - Math.floor(score / 200) * 80);
+    const speed = Math.max(600, 1200 - Math.floor(scoreRef.current / 200) * 80);
     spawnRef.current = setInterval(() => {
       spawnCard();
     }, speed);
     return () => clearInterval(spawnRef.current);
-  }, [phase, targetCard, score, spawnCard]);
+  }, [phase, targetCard, spawnCard]);
 
   const handleTap = (uid) => {
+    if (phaseRef.current !== 'playing') return;
     const card = fallingCards.find(c => c.uid === uid);
     if (!card) return;
 
@@ -116,6 +136,7 @@ export default function CardBlitzScreen() {
       const pts = 100 + (newStreak > 1 ? newStreak * 20 : 0);
       setScore(s => {
         const newScore = s + pts;
+        scoreRef.current = newScore;
         if (newScore >= TARGET_SCORE) {
           clearInterval(spawnRef.current);
           setPhase('won');
@@ -135,7 +156,11 @@ export default function CardBlitzScreen() {
     } else {
       hapticError();
       setStreak(0);
-      setScore(s => Math.max(0, s - 50));
+      setScore(s => {
+        const newScore = Math.max(0, s - 50);
+        scoreRef.current = newScore;
+        return newScore;
+      });
       setLives(l => {
         const newLives = l - 1;
         if (newLives <= 0) { clearInterval(spawnRef.current); setPhase('lost'); }
@@ -155,7 +180,7 @@ export default function CardBlitzScreen() {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'linear-gradient(180deg, #0D1B3E, #060e20)', overflow: 'hidden', position: 'relative' }}>
-      {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} numberOfPieces={300} />}
+      {showConfetti && <Confetti width={windowSize.w} height={windowSize.h} recycle={false} numberOfPieces={300} />}
 
       {/* Header */}
       <div style={{ padding: '12px 16px 0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 10, position: 'relative' }}>
@@ -267,7 +292,7 @@ export default function CardBlitzScreen() {
                     boxShadow: fc.isTarget ? '0 0 12px rgba(245,200,66,0.5)' : '0 4px 12px rgba(0,0,0,0.3)',
                   }}>
                     <CardDisplay card={fc.card} />
-                    <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 8, color: '#1a1a1a', textAlign: 'center', marginTop: 3, lineHeight: 1, letterSpacing: 0.3 }}>
+                    <div style={{ fontFamily: 'Bebas Neue, sans-serif', fontSize: 8, color: '#1a1a1a', textAlign: 'center', marginTop: 3, lineHeight: 1, letterSpacing: 0.3, whiteSpace: 'pre-line' }}>
                       {fc.card.name.split(' ').map(w => w.toUpperCase()).join('\n')}
                     </div>
                   </div>

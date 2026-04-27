@@ -74,11 +74,12 @@ export default function ClassicCallerScreen() {
   };
 
   const handlePause = () => {
-    setPhase(p => p === 'paused' ? 'playing' : 'paused');
     if (phase === 'paused') {
-      // resume
+      setPhase('playing');
+      // autoPlay useEffect watches phase and restarts the interval
     } else {
       clearInterval(intervalRef.current);
+      setPhase('paused');
     }
   };
 

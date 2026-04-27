@@ -177,26 +177,33 @@ export function ShareScoreCard({ score, level, winType, pesos, cards = [], strea
     setSharing(true);
     try {
       const canvas = canvasRef.current;
-      canvas.toBlob(async (blob) => {
-        const file = new File([blob], 'loteria-remix-score.png', { type: 'image/png' });
-
-        if (navigator.share && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            title: '¡LOTERÍA! Check my score!',
-            text: `I just scored ${score?.toLocaleString()} pts in Lotería Remix! Can you beat it? 🎴`,
-            files: [file],
-          });
-        } else {
-          // Fallback: download
-          const url = canvas.toDataURL('image/png');
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'loteria-remix-score.png';
-          a.click();
-        }
-        setSharing(false);
+      await new Promise((resolve, reject) => {
+        canvas.toBlob(async (blob) => {
+          if (!blob) { reject(new Error('Canvas export failed')); return; }
+          try {
+            const file = new File([blob], 'loteria-remix-score.png', { type: 'image/png' });
+            if (navigator.share && navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                title: '¡LOTERÍA! Check my score!',
+                text: `I just scored ${score?.toLocaleString()} pts in Lotería Remix! Can you beat it? 🎴`,
+                files: [file],
+              });
+            } else {
+              const url = canvas.toDataURL('image/png');
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'loteria-remix-score.png';
+              a.click();
+            }
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        });
       });
     } catch (err) {
+      // user cancelled or blob failed — ignore
+    } finally {
       setSharing(false);
     }
   };

@@ -21,9 +21,9 @@ export function AddToHomeScreenBanner() {
     if (dismissed) return;
     const p = detectPlatform();
     setPlatform(p);
-    // Only show if not already installed and on mobile
     if (!p.isStandalone && (p.isIOS || p.isAndroid)) {
-      setTimeout(() => setVisible(true), 3000);
+      const t = setTimeout(() => setVisible(true), 3000);
+      return () => clearTimeout(t);
     }
   }, []);
 

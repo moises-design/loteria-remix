@@ -19,6 +19,13 @@ export default function LightningRoundScreen() {
   const [feedback, setFeedback] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [timerPct, setTimerPct] = useState(100);
+  const [windowSize, setWindowSize] = useState({ w: window.innerWidth, h: window.innerHeight });
+
+  useEffect(() => {
+    const onResize = () => setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   // Use refs for game state to avoid stale closures completely
   const boardRef = useRef([]);
@@ -30,7 +37,7 @@ export default function LightningRoundScreen() {
   const phaseRef = useRef('setup');
   const cardTimerRef = useRef(null);
   const feedbackTimerRef = useRef(null);
-  const speedRef = useRef(3);
+  const tappedBoardIds = useRef(new Set());
 
   // Display state synced from refs
   const [boardDisplay, setBoardDisplay] = useState([]);
@@ -78,7 +85,6 @@ export default function LightningRoundScreen() {
 
     // Speed up over time
     const speed = Math.max(1.5, 3 - Math.floor(scoreRef.current / 300) * 0.3);
-    speedRef.current = speed;
 
     // Countdown timer
     let elapsed = 0;
@@ -125,6 +131,7 @@ export default function LightningRoundScreen() {
     setScoreDisplay(0);
     streakRef.current = 0;
     cardsCompletedRef.current = 0;
+    tappedBoardIds.current = new Set();
     setCardsCompleted(0);
     setShowConfetti(false);
     phaseRef.current = 'countdown';
@@ -160,6 +167,12 @@ export default function LightningRoundScreen() {
       setScoreDisplay(scoreRef.current);
       cardsCompletedRef.current += 1;
       setCardsCompleted(cardsCompletedRef.current);
+      tappedBoardIds.current.add(tappedCard.id);
+      // Win: tapped every unique card on the board at least once
+      if (tappedBoardIds.current.size >= boardRef.current.length) {
+        endGame(true);
+        return;
+      }
       showFeedback(streakRef.current > 2 ? `🔥 x${streakRef.current} +${pts}` : `+${pts}`, 'var(--gold)');
       setTimeout(() => callNextCard(), 200);
     } else {
@@ -188,7 +201,7 @@ export default function LightningRoundScreen() {
 
   return (
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--navy)', overflow: 'hidden' }}>
-      {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} numberOfPieces={250} />}
+      {showConfetti && <Confetti width={windowSize.w} height={windowSize.h} recycle={false} numberOfPieces={250} />}
 
       {/* Header */}
       <div style={{ padding: '12px 16px 8px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

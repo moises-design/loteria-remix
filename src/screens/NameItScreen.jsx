@@ -23,7 +23,14 @@ export default function NameItScreen() {
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [windowSize, setWindowSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   const timerRef = useRef(null);
+
+  useEffect(() => {
+    const onResize = () => setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const buildQuestions = () => {
     const shuffled = shuffle([...deck]).slice(0, TOTAL_QUESTIONS);
@@ -91,8 +98,11 @@ export default function NameItScreen() {
       setAnswers(a => [...a, { correct: false, pts: 0, card: currentQ.correct, selected: option }]);
     }
 
+    // Compute final score now (before async setState flushes) for addPesos
+    const finalScore = isCorrect ? score + pts : score;
     setTimeout(() => {
       if (qIdx + 1 >= TOTAL_QUESTIONS) {
+        addPesos(Math.floor(finalScore / 10));
         setPhase('done');
         if (isCorrect) setShowConfetti(true);
       } else {
@@ -109,7 +119,7 @@ export default function NameItScreen() {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--navy)', overflow: 'hidden' }}>
-      {showConfetti && <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} numberOfPieces={200} />}
+      {showConfetti && <Confetti width={windowSize.w} height={windowSize.h} recycle={false} numberOfPieces={200} />}
 
       {/* Header */}
       <div style={{ padding: '12px 16px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

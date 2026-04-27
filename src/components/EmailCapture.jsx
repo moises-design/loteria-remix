@@ -9,11 +9,13 @@ export function EmailCaptureModal({ onClose }) {
   const handleSubmit = async () => {
     if (!email.includes('@')) return;
     setStatus('loading');
-    const { error } = await saveEmail(email, name);
-    if (error) {
-      // Still show success to user — don't expose errors
-      console.error(error);
+    try {
+      const { error } = await saveEmail(email, name);
+      if (error) console.error(error);
+    } catch (err) {
+      console.error('Email save failed:', err);
     }
+    // Always show success — don't expose network errors to the user
     setStatus('success');
     localStorage.setItem('loteria-email-captured', '1');
   };
